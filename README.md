@@ -1,6 +1,6 @@
 # GrowlAds iOS SDK
 
-Monetize your iOS app with contextual ads powered by Growl.
+Monetize your iOS app with contextual ads powered by [Growl](https://withgrowl.com/).
 
 ## Requirements
 
@@ -15,14 +15,17 @@ Monetize your iOS app with contextual ads powered by Growl.
 Add GrowlAds to your project in Xcode:
 
 1. **File → Add Package Dependencies**
-2. Enter the repository URL: `https://github.com/growlads/growl-ios-sdk`
-3. Select **Up to Next Major Version** from `0.0.2`
+2. Enter the repository URL:
+   ```
+   https://github.com/growlads/growl-ios-sdk
+   ```
+3. Select **Up to Next Major Version** from `0.0.4`
 
-Or add it to your `Package.swift`:
+Or add it directly to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/growl-ios-sdk", from: "0.0.2"),
+    .package(url: "https://github.com/growlads/growl-ios-sdk", from: "0.0.4"),
 ]
 ```
 
@@ -42,7 +45,7 @@ Then add `GrowlAds` to your target's dependencies:
 ```swift
 import GrowlAds
 
-// Initialize the SDK
+// Initialize the SDK with your credentials
 Growl.initialize(publisherId: "your-publisher-id", adUnitId: "your-ad-unit-id")
 
 // Load an ad with conversation context
@@ -58,7 +61,7 @@ case .loaded(let ad):
     // Display the ad using GrowlAdView
     GrowlAdView(ad: ad)
 case .noFill:
-    // No ad available
+    // No ad available for this context
     break
 case .error(let message):
     print("Ad error: \(message)")
@@ -92,8 +95,8 @@ struct ChatView: View {
 
 ## Crash Reporting
 
-Download dSYM files from [GitHub Releases](https://github.com/growlads/growl-ios-sdk/releases) for crash symbolication with Crashlytics, Sentry, or other tools.
+Each [GitHub release](https://github.com/growlads/growl-ios-sdk/releases) includes dSYM files for crash symbolication with Crashlytics, Sentry, or other tools.
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+This SDK is available under the MIT License. See [LICENSE](LICENSE) for details.
