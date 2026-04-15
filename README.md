@@ -16,13 +16,13 @@ Add GrowlAds to your project in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter the repository URL: `https://github.com/growlads/growl-ios-sdk`
-3. Select **Up to Next Major Version** from `1.0.0`
+3. Select **Up to Next Major Version** from `0.0.1`
 
 Or add it to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/growl-ios-sdk", from: "1.0.0"),
+    .package(url: "https://github.com/growlads/growl-ios-sdk", from: "0.0.1"),
 ]
 ```
 
