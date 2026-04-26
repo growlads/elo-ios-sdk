@@ -4,7 +4,7 @@ Monetize your iOS app with contextual ads powered by [Growl](https://withgrowl.c
 
 ## Requirements
 
-- iOS 16.0+ / macOS 13.0+
+- iOS 16.0+
 - Swift 5.9+
 - Xcode 15+
 
@@ -12,24 +12,21 @@ Monetize your iOS app with contextual ads powered by [Growl](https://withgrowl.c
 
 ### Swift Package Manager
 
-Add GrowlAds to your project in Xcode:
+In Xcode: **File → Add Package Dependencies**, then enter:
 
-1. **File → Add Package Dependencies**
-2. Enter the repository URL:
-   ```
-   https://github.com/growlads/growl-ios-sdk
-   ```
-3. Select **Up to Next Major Version** from `0.0.4`
+```
+https://github.com/growlads/growl-ios-sdk
+```
 
-Or add it directly to your `Package.swift`:
+Pick **Up to Next Major Version** from `0.0.5`, and add the `GrowlAds` library to your target.
+
+Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/growl-ios-sdk", from: "0.0.4"),
+    .package(url: "https://github.com/growlads/growl-ios-sdk", from: "0.0.5"),
 ]
 ```
-
-Then add `GrowlAds` to your target's dependencies:
 
 ```swift
 .target(
@@ -40,51 +37,60 @@ Then add `GrowlAds` to your target's dependencies:
 ),
 ```
 
-## Quick Start
+`GrowlAds` is the only library product you need. The SDK ships internally as a few focused frameworks, but you import a single module.
+
+## Quick start
 
 ```swift
 import GrowlAds
 
-// Initialize the SDK with your credentials
-Growl.initialize(publisherId: "your-publisher-id", adUnitId: "your-ad-unit-id")
+// 1. Initialize once at app launch.
+Growl.initialize(
+    publisherId: "your-publisher-id",
+    adUnitId: "your-ad-unit-id"
+)
 
-// Load an ad with conversation context
+// 2. Build a request from the surrounding conversation.
 let messages: [ChatMessage] = [
     ChatMessage(role: .user, content: "What's the best running shoe?"),
     ChatMessage(role: .assistant, content: "Here are some top picks..."),
 ]
 
+// 3. Ask for an ad. `loadAd` is non-throwing and returns an exhaustive enum.
 let result = await Growl.loadAd(messages: messages)
 
 switch result {
 case .loaded(let ad):
-    // Display the ad using GrowlAdView
-    GrowlAdView(ad: ad)
-case .noFill:
-    // No ad available for this context
-    break
+    print("Ad loaded: \(ad)")
+case .noFill(let reason):
+    // Not an error — just no match for this context.
+    print("No fill: \(reason)")
 case .error(let message):
     print("Ad error: \(message)")
 }
 ```
 
-## SwiftUI Integration
+## SwiftUI
+
+`GrowlAdView` accepts an `AdResult` directly and hides itself on `.noFill` or `.error`, so you can hand it the result without branching:
 
 ```swift
+import SwiftUI
+import GrowlAds
+
 struct ChatView: View {
     @State private var adResult: AdResult?
 
+    let messages: [ChatMessage] = [
+        ChatMessage(role: .user, content: "What's the best running shoe?"),
+        ChatMessage(role: .assistant, content: "Here are some top picks..."),
+    ]
+
     var body: some View {
         VStack {
-            // Your chat content...
+            // ...your chat content...
 
-            if let result = adResult {
-                GrowlAdView(result: result)
-                    .growlAdStyle(GrowlAdStyle(
-                        cardBackground: .white,
-                        cornerRadius: 12
-                    ))
-            }
+            GrowlAdView(result: adResult)
         }
         .task {
             adResult = await Growl.loadAd(messages: messages)
@@ -93,10 +99,21 @@ struct ChatView: View {
 }
 ```
 
-## Crash Reporting
+## Example
 
-Each [GitHub release](https://github.com/growlads/growl-ios-sdk/releases) includes dSYM files for crash symbolication with Crashlytics, Sentry, or other tools.
+The [`Example/`](Example/) folder contains a runnable iOS app you can open in Xcode to see the full integration end-to-end.
+
+```sh
+cd Example
+open GrowlAdsExample.xcodeproj
+```
+
+Press ▶ in Xcode (iPhone simulator) and tap **Load ad** to fire a contextual request and render the result. The example points at public test publisher and ad-unit IDs, so it works out of the box without configuration.
+
+## Crash reporting
+
+dSYM files for symbolicating crashes are attached to each [GitHub release](https://github.com/growlads/growl-ios-sdk/releases). Drop the matching version's archive into Crashlytics, Sentry, or Xcode Organizer.
 
 ## License
 
-This SDK is available under the MIT License. See [LICENSE](LICENSE) for details.
+See [LICENSE](LICENSE).

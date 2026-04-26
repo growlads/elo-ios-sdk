@@ -1,0 +1,33 @@
+name: GrowlAdsExample
+options:
+  bundleIdPrefix: com.growl.example
+  deploymentTarget:
+    iOS: "16.0"
+
+# Resolves the binary GrowlAds package by reading this repo's own
+# Package.swift (which declares the binaryTargets pointing at the
+# release zips). Switch to a `url:` form if you want to demo the
+# tagged-release flow without a local checkout:
+#
+#   GrowlAds:
+#     url: https://github.com/growlads/growl-ios-sdk
+#     from: "0.0.5"
+packages:
+  GrowlAds:
+    path: ..
+
+targets:
+  GrowlAdsExample:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    dependencies:
+      - package: GrowlAds
+        product: GrowlAds
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: "NO"
+        INFOPLIST_FILE: Support/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.growl.example.GrowlAdsExample
+        SWIFT_VERSION: "5.0"
