@@ -12,44 +12,36 @@ let package = Package(
         .iOS(.v16),
     ],
     products: [
-        // Single public product: `import GrowlAds` is the only entry point
-        // consumers ever need. The internal multi-module split (Core/UI/
-        // Messaging/Events) ships as separate binary targets for build
-        // hygiene but isn't exposed as SwiftPM library products — adopters
-        // don't have to think about which sub-module to import.
-        .library(name: "GrowlAds", targets: [
-            "GrowlCore",
-            "GrowlUI",
-            "GrowlAds",
-            "GrowlMessaging",
-            "GrowlEvents",
-        ]),
+        // The SDK. `import GrowlAds` is everything.
+        .library(name: "GrowlAds", targets: ["GrowlAds"]),
+        // Opt-in mediation adapter. Adds GoogleMobileAds to the consumer's
+        // app; only pull this product if you're wiring AdMob demand.
+        .library(name: "GrowlAdsMediationAdMob", targets: ["GrowlAdsMediationAdMob"]),
+    ],
+    dependencies: [
+        .package(
+            url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
+            from: "11.0.0"
+        ),
     ],
     targets: [
         .binaryTarget(
-            name: "GrowlCore",
-            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.5/GrowlCore.xcframework.zip",
-            checksum: "c8f950dfa17ecfd00879c07d182ef277da2d1ddfc75ed12d75058e43c8dfbfee"
-        ),
-        .binaryTarget(
-            name: "GrowlUI",
-            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.5/GrowlUI.xcframework.zip",
-            checksum: "d0701df16508d8a14a54dfd803eeff0ac423982493c99e991df01ef723fa856a"
-        ),
-        .binaryTarget(
             name: "GrowlAds",
-            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.5/GrowlAds.xcframework.zip",
-            checksum: "60ea1a42f2a93fed6b1a8b849aab5012517d56ab9d5501d9283161dc0da20a21"
+            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.6/GrowlAds.xcframework.zip",
+            checksum: "0dfccf703832a43257d017d7c2fba4e0ecd523739a19557656c87c62a07ecc34"
         ),
-        .binaryTarget(
-            name: "GrowlMessaging",
-            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.5/GrowlMessaging.xcframework.zip",
-            checksum: "5b20d37db293e476029160e320f48ff13714c6adcb08fc2667e013f5bc1b7787"
-        ),
-        .binaryTarget(
-            name: "GrowlEvents",
-            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.5/GrowlEvents.xcframework.zip",
-            checksum: "2ec823c317f8f0f0631514fa99cc2a2e9d72f00e3c400044884e05e309dd2243"
+        .target(
+            name: "GrowlAdsMediationAdMob",
+            dependencies: [
+                "GrowlAds",
+                .product(
+                    name: "GoogleMobileAds",
+                    package: "swift-package-manager-google-mobile-ads"
+                ),
+            ],
+            path: "Sources/GrowlAdsMediationAdMob",
+            exclude: ["README.md", "Resources/UPDATING.md"],
+            resources: [.process("Resources/AdMobSKAdNetworkItems.plist")]
         ),
     ]
 )
