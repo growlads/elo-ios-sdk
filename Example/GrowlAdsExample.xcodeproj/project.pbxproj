@@ -9,12 +9,13 @@
 /* Begin PBXBuildFile section */
 		16AE9BC1EAD6640E75EA7EB1 /* GrowlAdsExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756782BD2969FF8A2968BC47 /* GrowlAdsExampleApp.swift */; };
 		CA91FBDD9901DFBD3ABD0476 /* GrowlAds in Frameworks */ = {isa = PBXBuildFile; productRef = 3F51DE1061E76537EF874660 /* GrowlAds */; };
+		CB8B6B5A685A5CD1DE2A86E5 /* GrowlAdsMediationAdMob in Frameworks */ = {isa = PBXBuildFile; productRef = 0B0CAB2AC111DB80212474A2 /* GrowlAdsMediationAdMob */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2692E45D353884DBAEC0BE92 /* GrowlAdsExample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GrowlAdsExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		756782BD2969FF8A2968BC47 /* GrowlAdsExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowlAdsExampleApp.swift; sourceTree = "<group>"; };
-		C19046706A4D993DBB3DED73 /* dist-repo-0.0.5 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "dist-repo-0.0.5"; path = ..; sourceTree = SOURCE_ROOT; };
+		D76DD70DE1A6E74157F25D54 /* dist-repo-docs */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "dist-repo-docs"; path = ..; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -23,6 +24,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CA91FBDD9901DFBD3ABD0476 /* GrowlAds in Frameworks */,
+				CB8B6B5A685A5CD1DE2A86E5 /* GrowlAdsMediationAdMob in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -57,7 +59,7 @@
 		CF3076ED12AA59F76A156165 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				C19046706A4D993DBB3DED73 /* dist-repo-0.0.5 */,
+				D76DD70DE1A6E74157F25D54 /* dist-repo-docs */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -79,6 +81,7 @@
 			name = GrowlAdsExample;
 			packageProductDependencies = (
 				3F51DE1061E76537EF874660 /* GrowlAds */,
+				0B0CAB2AC111DB80212474A2 /* GrowlAdsMediationAdMob */,
 			);
 			productName = GrowlAdsExample;
 			productReference = 2692E45D353884DBAEC0BE92 /* GrowlAdsExample.app */;
@@ -315,6 +318,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		0B0CAB2AC111DB80212474A2 /* GrowlAdsMediationAdMob */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GrowlAdsMediationAdMob;
+		};
 		3F51DE1061E76537EF874660 /* GrowlAds */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GrowlAds;
