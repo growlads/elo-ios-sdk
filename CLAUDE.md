@@ -63,13 +63,12 @@ If those three are out of sync — e.g. `Package.swift` references a version tha
 
 dSYMs for crash symbolication come from each release's GitHub assets. README points consumers there.
 
-## House Rules
+## Observed conventions
 
-> _TODO (Gökhan): Fill this section with 5–10 lines of repo-specific rules I can't infer. Strong candidates:_
->
-> - _Hotfix policy — is direct editing of `Sources/GrowlAdsMediationAdMob/` here ever acceptable, and if so, what's the upstream-sync requirement?_
-> - _README divergence — what kinds of changes belong in this README vs. the source repo's README?_
-> - _Branch discipline — does this repo only ever receive commits from the publish workflow, or are manual `main` commits expected for non-generated files?_
-> - _Anything you've had to correct me on more than once._
->
-> _Delete this blockquote once filled in._
+Inferred from the code, README content, and the source-repo's publish pipeline. Not yet confirmed by the team — correct any that are wrong.
+
+- **Default hotfix policy: don't.** Because the publish workflow rsyncs `Sources/GrowlAdsMediationAdMob/` and regenerates `Package.swift` on every release, any direct fix in this repo will be silently rolled back the next time a version is published from upstream. Patch upstream and re-publish; never hotfix here unless an emergency forces it, in which case pair the fix with an immediate same-day upstream patch so the next normal release doesn't undo it.
+- **README divergence is intentional.** The source-repo's `README.md` is dev-facing (build/test/release flow). This repo's `README.md` is consumer-facing (install/integrate/AdMob wiring). They are not synced and should not be — changes belong wherever the audience cares.
+- **Version coupling is total.** The `Package.swift` declared version, the `binaryTarget` URL's version path segment, the `CFBundleShortVersionString` baked into the XCFramework, the `sdkVersion` constant inside the binary, and the GitHub Release tag must all match. The publish script enforces this; manual edits anywhere risk drift that breaks `swift package resolve` for every consumer.
+- **Manual `main` commits.** Outside the publish workflow, only the editable paths above (`README.md`, `Example/`, `LICENSE`, `CLAUDE.md`, `.gitignore`) should land here directly. Anything else implies the publish workflow either failed mid-flight or is being bypassed — investigate before "fixing forward."
+- **`Example/` placeholder IDs.** `Example/Sources/GrowlAdsExampleApp.swift` ships with placeholder publisher/ad-unit IDs. Real IDs go in via consumer-local edits and should not be committed to this public repo.
