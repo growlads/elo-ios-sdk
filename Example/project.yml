@@ -5,12 +5,12 @@ options:
     iOS: "16.0"
 
 # Resolves the GrowlAds package from this repo's own Package.swift, which
-# pulls the binary GrowlAds.xcframework from the release matching this
-# checkout and the AdMob mediation adapter as source. Swap in:
+# pulls the binary GrowlAds.xcframework from the matching tagged release.
+# Swap in:
 #
 #   GrowlAds:
 #     url: https://github.com/growlads/growl-ios-sdk
-#     from: "0.0.7"
+#     from: "0.0.1"
 #
 # to demo the tagged-release flow without a local checkout.
 packages:
@@ -26,8 +26,6 @@ targets:
     dependencies:
       - package: GrowlAds
         product: GrowlAds
-      - package: GrowlAds
-        product: GrowlAdsMediationAdMob
     settings:
       base:
         GENERATE_INFOPLIST_FILE: "NO"
