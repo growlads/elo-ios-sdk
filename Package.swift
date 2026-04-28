@@ -14,34 +14,12 @@ let package = Package(
     products: [
         // The SDK. `import GrowlAds` is everything.
         .library(name: "GrowlAds", targets: ["GrowlAds"]),
-        // Opt-in mediation adapter. Adds GoogleMobileAds to the consumer's
-        // app; only pull this product if you're wiring AdMob demand.
-        .library(name: "GrowlAdsMediationAdMob", targets: ["GrowlAdsMediationAdMob"]),
-    ],
-    dependencies: [
-        .package(
-            url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
-            from: "11.0.0"
-        ),
     ],
     targets: [
         .binaryTarget(
             name: "GrowlAds",
-            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.7/GrowlAds.xcframework.zip",
-            checksum: "99391352f051641e8fc1a86506cc1c31116c34672e7532953eea4a63b74da9fe"
-        ),
-        .target(
-            name: "GrowlAdsMediationAdMob",
-            dependencies: [
-                "GrowlAds",
-                .product(
-                    name: "GoogleMobileAds",
-                    package: "swift-package-manager-google-mobile-ads"
-                ),
-            ],
-            path: "Sources/GrowlAdsMediationAdMob",
-            exclude: ["README.md", "Resources/UPDATING.md"],
-            resources: [.process("Resources/AdMobSKAdNetworkItems.plist")]
+            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.1/GrowlAds.xcframework.zip",
+            checksum: "18bc8eb588b3e03aafc980ceaa84215620384f2c5e20b66630176018fd643edb"
         ),
     ]
 )
