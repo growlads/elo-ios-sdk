@@ -9,7 +9,7 @@ options:
 # Swap in:
 #
 #   GrowlAds:
-#     url: https://github.com/growlads/growl-ios-sdk
+#     url: https://github.com/growlads/elo-ios-sdk
 #     from: "0.0.1"
 #
 # to demo the tagged-release flow without a local checkout.

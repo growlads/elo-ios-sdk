@@ -18,7 +18,7 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "GrowlAds",
-            url: "https://github.com/growlads/growl-ios-sdk/releases/download/0.0.1/GrowlAds.xcframework.zip",
+            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.0.1/GrowlAds.xcframework.zip",
             checksum: "18bc8eb588b3e03aafc980ceaa84215620384f2c5e20b66630176018fd643edb"
         ),
     ]

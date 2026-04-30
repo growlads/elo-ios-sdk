@@ -30,7 +30,7 @@ This example demonstrates Growl-direct demand only. To wire mediation adapters (
 ```yaml
 packages:
   GrowlAds:
-    url: https://github.com/growlads/growl-ios-sdk
+    url: https://github.com/growlads/elo-ios-sdk
     from: "0.0.1"
 ```
 

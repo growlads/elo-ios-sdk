@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-The **public, consumer-facing distribution** of the Growl iOS SDK — what app developers SPM-fetch from `https://github.com/growlads/growl-ios-sdk`. This repo is **not** where the SDK is developed.
+The **public, consumer-facing distribution** of the Growl iOS SDK — what app developers SPM-fetch from `https://github.com/growlads/elo-ios-sdk`. This repo is **not** where the SDK is developed.
 
 Source-of-truth lives in a sibling repo: `elo-ios-sdk-source` (privately at `growlads/GrowlIosSdk`). Bugs are fixed there; releases are published from there into this repo by an automated workflow.
 
