@@ -18,13 +18,13 @@ In Xcode: **File → Add Package Dependencies**, then enter:
 https://github.com/growlads/elo-ios-sdk
 ```
 
-Pick **Up to Next Major Version** from `0.0.7`, and add the `GrowlAds` library to your target.
+Pick **Up to Next Major Version** from `0.0.1`, and add the `GrowlAds` library to your target.
 
 Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.0.7"),
+    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.0.1"),
 ]
 ```
 
