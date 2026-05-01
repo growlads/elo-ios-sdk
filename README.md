@@ -1,6 +1,6 @@
-# GrowlAds iOS SDK
+# Elo iOS SDK
 
-Monetize your iOS app with contextual ads powered by [Growl](https://withgrowl.com/).
+Monetize your iOS app with contextual ads powered by [Elo](https://elo.ad/).
 
 ## Requirements
 
@@ -108,7 +108,7 @@ cd Example
 open GrowlAdsExample.xcodeproj
 ```
 
-Press ▶ in Xcode (iPhone simulator) and tap **Load ad** to fire a contextual request. Replace the placeholder publisher/ad-unit IDs in `Sources/GrowlAdsExampleApp.swift` with values from your Growl dashboard before expecting real fills.
+Press ▶ in Xcode (iPhone simulator) and tap **Load ad** to fire a contextual request. Replace the placeholder publisher/ad-unit IDs in `Sources/GrowlAdsExampleApp.swift` with values from your Elo dashboard before expecting real fills.
 
 ## Crash reporting
 
