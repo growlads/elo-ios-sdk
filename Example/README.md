@@ -1,6 +1,6 @@
-# GrowlAds Example
+# Elo Example
 
-A SwiftUI iOS app that demonstrates a minimal Growl integration: SDK initialization, a contextual ad request built from a chat snippet, and rendering with `GrowlAdView`.
+A SwiftUI iOS app that demonstrates a minimal Elo integration: SDK initialization, a contextual ad request built from a chat snippet, and rendering with `GrowlAdView`.
 
 ## Run
 
@@ -10,7 +10,7 @@ open GrowlAdsExample.xcodeproj
 
 Pick an iPhone simulator and press ▶. Tap **Load ad** to fire a request and render the result.
 
-> **Before it returns real fills:** edit `Sources/GrowlAdsExampleApp.swift` and replace `growlPublisherID` / `growlAdUnitID` with values from your Growl dashboard. The placeholder strings are deliberately invalid so untouched runs surface as `.error(.notConfigured)` rather than silently calling out to a stranger's account.
+> **Before it returns real fills:** edit `Sources/GrowlAdsExampleApp.swift` and replace `growlPublisherID` / `growlAdUnitID` with values from your Elo dashboard. The placeholder strings are deliberately invalid so untouched runs surface as `.error(.notConfigured)` rather than silently calling out to a stranger's account.
 
 ## What it does
 
@@ -21,7 +21,7 @@ Pick an iPhone simulator and press ▶. Tap **Load ad** to fire a request and re
 
 ## Adding mediation
 
-This example demonstrates Growl-direct demand only. To wire mediation adapters (AdMob, AppLovin, etc.), add the [`elo-ios-mediation`](https://github.com/growlads/elo-ios-mediation) package as a dependency and use the long-form `Growl.configure(with: GrowlConfiguration(...))` initializer to register adapters.
+This example demonstrates Elo-direct demand only. To wire mediation adapters (AdMob, AppLovin, etc.), add the [`elo-ios-mediation`](https://github.com/growlads/elo-ios-mediation) package as a dependency and use the long-form `Growl.configure(with: GrowlConfiguration(...))` initializer to register adapters.
 
 ## How `GrowlAds` is resolved
 

@@ -1,6 +1,6 @@
-# Growl AdMob Mediation Adapter
+# Elo AdMob Mediation Adapter
 
-`GrowlAdsMediationAdMob` adds Google AdMob native demand to the Growl iOS SDK's client-side mediation auction.
+`GrowlAdsMediationAdMob` adds Google AdMob native demand to the Elo iOS SDK's client-side mediation auction.
 
 ## Scope
 
@@ -9,7 +9,7 @@
 - Built on top of `GoogleMobileAds`
 
 Banner, interstitial, rewarded, and rewarded interstitial support are not part
-of this adapter today because Growl's current mediation UI surface is
+of this adapter today because Elo's current mediation UI surface is
 native-only.
 
 ## Rendering Model
@@ -19,8 +19,8 @@ registered `GADNativeAdView`. The adapter therefore always attaches an
 `AdRenderer` that embeds `GADNativeAdView` (AdMob-owned MediaView + headline
 + body) inside `GrowlAdView`, so every successful AdMob fill is billable.
 
-`GrowlBadgeAdView` and `GrowlChatAdView` draw Growl's SwiftUI card layout
-and do not honor the renderer. They are safe surfaces for Growl-sourced
+`GrowlBadgeAdView` and `GrowlChatAdView` draw Elo's SwiftUI card layout
+and do not honor the renderer. They are safe surfaces for Elo-sourced
 creatives but **must not** be used for AdMob bids — showing the same
 `GADNativeAd` in non-registered views breaks tracking and violates AdMob
 policy. Branch on `ad.requiresCustomRendering` in host code to choose
@@ -40,7 +40,7 @@ Implications for host apps:
 - Do not wrap `GrowlAdView` in your own tap handler when the ad requires
   custom rendering; AdMob owns click attribution.
 - Ensure `GADApplicationIdentifier` is present before startup.
-- Expect the AdMob-owned native layout (taller than Growl's compact card) to
+- Expect the AdMob-owned native layout (taller than Elo's compact card) to
   control presentation for AdMob fills.
 - Display a single `GrowlAdView` per auction result; a `GADNativeAd` can
   only be registered against one `GADNativeAdView` at a time.
@@ -100,7 +100,7 @@ Growl.configure(
 ### Price tiers
 
 `GADNativeAd` does not expose a programmatic bid price. To make AdMob fills
-compete fairly in Growl's auction, configure AdMob ad units at fixed eCPM
+compete fairly in Elo's auction, configure AdMob ad units at fixed eCPM
 floors in the AdMob console (e.g. `$5`, `$2`, `$0.50`) and pass them as
 `priceTiers` ordered highest-first.
 
