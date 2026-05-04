@@ -1,0 +1,50 @@
+name: Bug report
+description: Something in the SDK is misbehaving.
+labels: ["bug"]
+body:
+  - type: input
+    id: sdk_version
+    attributes:
+      label: SDK version
+      description: The Swift Package Manager tag, e.g. 0.0.7
+      placeholder: "0.0.7"
+    validations:
+      required: true
+  - type: input
+    id: ios_version
+    attributes:
+      label: iOS version
+      placeholder: "17.4"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / simulator
+      placeholder: "iPhone 15 Pro / iPhone 16 simulator"
+    validations:
+      required: true
+  - type: input
+    id: xcode_version
+    attributes:
+      label: Xcode version
+      placeholder: "16.2"
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal repro. Code snippets help.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Console output (filter on `Growl`), stack traces, etc.
+      render: shell

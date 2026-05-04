@@ -6,15 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The **public, consumer-facing distribution** of the Growl iOS SDK — what app developers SPM-fetch from `https://github.com/growlads/elo-ios-sdk`. This repo is **not** where the SDK is developed.
 
-Source-of-truth lives in a sibling repo: `elo-ios-sdk-source` (privately at `growlads/GrowlIosSdk`). Bugs are fixed there; releases are published from there into this repo by an automated workflow.
+Source-of-truth lives in a separate, private source repository. Bugs are fixed there; releases are published from there into this repo by an automated workflow.
 
-If a teammate is reading this repo: assume their question is either an integration question (answer from `README.md` and `Example/`) or a release-mechanics question (answer by pointing at the source repo's `scripts/build-xcframework.sh` and `.github/workflows/publish-ios-sdk.yml`).
+If a teammate is reading this repo: assume their question is either an integration question (answer from `README.md` and `Example/`) or a release-mechanics question (release mechanics live in the source repo and are not visible here).
 
 ## Do not edit by hand
 
 Two things in this repo are produced by the upstream publish workflow and will be **clobbered on the next release**:
 
-1. **`Package.swift`** — generated. The header comment in the file itself says so. The `binaryTarget` URL and `checksum:` are computed during the XCFramework build (see `scripts/build-xcframework.sh` upstream). Editing the checksum without editing the bytes it references will break SPM resolution for every consumer. Editing the URL without re-uploading the matching artifact does the same.
+1. **`Package.swift`** — generated. The header comment in the file itself says so. The `binaryTarget` URL and `checksum:` are computed during the XCFramework build in the source repo. Editing the checksum without editing the bytes it references will break SPM resolution for every consumer. Editing the URL without re-uploading the matching artifact does the same.
 2. **`Sources/GrowlAdsMediationAdMob/`** — rsynced from upstream `Sources/GrowlAdsMediationAdMob/` during publishing. Any edits here are lost on the next release.
 
 When you'd be tempted to edit either of those, edit upstream and re-publish instead. If a hotfix in this repo is ever genuinely needed (e.g. an emergency revert outside the publish window), it must be paired with a same-day upstream patch so the next normal release doesn't silently roll the fix back.
@@ -31,7 +31,7 @@ Things that **can** be edited directly here:
 
 Two products, one external dependency:
 
-- `GrowlAds` — `binaryTarget` pointing at a GitHub Releases asset (`GrowlAds.xcframework.zip`). This is the SDK. There is no SDK Swift source in this repo to read; if you need to look at the implementation, open it in the source repo.
+- `GrowlAds` — `binaryTarget` pointing at a GitHub Releases asset (`GrowlAds.xcframework.zip`). This is the SDK. There is no SDK Swift source in this repo to read; the implementation lives in the source repo.
 - `GrowlAdsMediationAdMob` — opt-in source target for AdMob mediation. Ships as source because its `GoogleMobileAds` transitive dep can't be vendored into an XCFramework.
 - Single SPM dependency: `swift-package-manager-google-mobile-ads` (only pulled when consumers depend on the AdMob product).
 
