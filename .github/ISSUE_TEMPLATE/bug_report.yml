@@ -6,8 +6,8 @@ body:
     id: sdk_version
     attributes:
       label: SDK version
-      description: The Swift Package Manager tag, e.g. 0.0.7
-      placeholder: "0.0.7"
+      description: The Swift Package Manager tag, e.g. 0.0.1
+      placeholder: "0.0.1"
     validations:
       required: true
   - type: input
