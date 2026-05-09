@@ -4,18 +4,12 @@ options:
   deploymentTarget:
     iOS: "16.0"
 
-# Resolves the EloAds package from this repo's own Package.swift, which
-# pulls the binary EloAds.xcframework from the matching tagged release.
-# Swap in:
-#
-#   EloAds:
-#     url: https://github.com/growlads/elo-ios-sdk
-#     from: "0.0.1"
-#
-# to demo the tagged-release flow without a local checkout.
+# Consumes EloAds via SwiftPM from the public dist-repo, exactly as a
+# real integrator would. Bump `from:` when pinning a newer release.
 packages:
   EloAds:
-    path: ..
+    url: https://github.com/growlads/elo-ios-sdk
+    from: "0.1.0"
 
 targets:
   EloAdsExample:
@@ -26,6 +20,8 @@ targets:
     dependencies:
       - package: EloAds
         product: EloAds
+      - package: EloAds
+        product: EloAdsMediationAdMob
     settings:
       base:
         GENERATE_INFOPLIST_FILE: "NO"
