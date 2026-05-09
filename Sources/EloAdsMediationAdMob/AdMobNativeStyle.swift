@@ -4,8 +4,8 @@ import UIKit
 /// Visual overrides applied to the ``GADNativeAdView`` that
 /// ``AdMobNativeAdRenderer`` builds for AdMob native fills.
 ///
-/// Mirrors the UIKit-flavored subset of ``GrowlAdStyle`` so the host can
-/// keep the AdMob-rendered card visually consistent with Growl-direct
+/// Mirrors the UIKit-flavored subset of ``EloAdStyle`` so the host can
+/// keep the AdMob-rendered card visually consistent with Elo-direct
 /// cards. Only non-nil fields are applied; everything else falls back to
 /// system colors.
 ///

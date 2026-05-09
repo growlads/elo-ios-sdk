@@ -1,40 +1,40 @@
 import Foundation
-import GrowlAds
+import EloAds
 
 #if canImport(GoogleMobileAds)
 @preconcurrency import GoogleMobileAds
 
-/// Forwards `GADNativeAdDelegate` callbacks into Growl's public tracking path
-/// so `GrowlAdDelegate` impression and click notifications fire for AdMob
-/// fills the same way they fire for Growl-sourced creatives.
+/// Forwards `GADNativeAdDelegate` callbacks into Elo's public tracking path
+/// so `EloAdDelegate` impression and click notifications fire for AdMob
+/// fills the same way they fire for Elo-sourced creatives.
 ///
 /// AdMob counts impressions and clicks itself once the creative is registered
 /// against a `GADNativeAdView`. This bridge mirrors those signals into
-/// ``Growl/trackImpression(_:)`` / ``Growl/trackClick(_:)`` so the publisher's
+/// ``Elo/trackImpression(_:)`` / ``Elo/trackClick(_:)`` so the publisher's
 /// delegate sees them. ``AdTrackingRegistry`` deduplicates impressions by ad
 /// id, so a duplicate fire from the SwiftUI viewability tracker for the same
 /// ad is a no-op.
 final class AdMobNativeAdDelegateBridge: NSObject, GADNativeAdDelegate, @unchecked Sendable {
-    private let onImpression: @Sendable (GrowlAd) -> Void
-    private let onClick: @Sendable (GrowlAd) -> Void
+    private let onImpression: @Sendable (EloAd) -> Void
+    private let onClick: @Sendable (EloAd) -> Void
 
     private let lock = NSLock()
-    private var attachedAd: GrowlAd?
+    private var attachedAd: EloAd?
 
     init(
-        onImpression: @escaping @Sendable (GrowlAd) -> Void = Growl.trackImpression,
-        onClick: @escaping @Sendable (GrowlAd) -> Void = Growl.trackClick
+        onImpression: @escaping @Sendable (EloAd) -> Void = Elo.trackImpression,
+        onClick: @escaping @Sendable (EloAd) -> Void = Elo.trackClick
     ) {
         self.onImpression = onImpression
         self.onClick = onClick
         super.init()
     }
 
-    /// Wire the bridge to the ``GrowlAd`` it represents. Called from
+    /// Wire the bridge to the ``EloAd`` it represents. Called from
     /// ``AdMobNetworkAdapter/makeCreative(from:)`` after the creative is built;
     /// the bridge stays inert until then so AdMob callbacks that arrive before
     /// the ad is fully attached are dropped rather than passed an empty value.
-    func attach(ad: GrowlAd) {
+    func attach(ad: EloAd) {
         lock.lock()
         defer { lock.unlock() }
         attachedAd = ad
@@ -50,7 +50,7 @@ final class AdMobNativeAdDelegateBridge: NSObject, GADNativeAdDelegate, @uncheck
         onClick(ad)
     }
 
-    private func currentAd() -> GrowlAd? {
+    private func currentAd() -> EloAd? {
         lock.lock()
         defer { lock.unlock() }
         return attachedAd

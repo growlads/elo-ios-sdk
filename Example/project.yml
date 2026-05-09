@@ -1,34 +1,34 @@
-name: GrowlAdsExample
+name: EloAdsExample
 options:
-  bundleIdPrefix: com.growl.example
+  bundleIdPrefix: com.elo.example
   deploymentTarget:
     iOS: "16.0"
 
-# Resolves the GrowlAds package from this repo's own Package.swift, which
-# pulls the binary GrowlAds.xcframework from the matching tagged release.
+# Resolves the EloAds package from this repo's own Package.swift, which
+# pulls the binary EloAds.xcframework from the matching tagged release.
 # Swap in:
 #
-#   GrowlAds:
+#   EloAds:
 #     url: https://github.com/growlads/elo-ios-sdk
 #     from: "0.0.1"
 #
 # to demo the tagged-release flow without a local checkout.
 packages:
-  GrowlAds:
+  EloAds:
     path: ..
 
 targets:
-  GrowlAdsExample:
+  EloAdsExample:
     type: application
     platform: iOS
     sources:
       - Sources
     dependencies:
-      - package: GrowlAds
-        product: GrowlAds
+      - package: EloAds
+        product: EloAds
     settings:
       base:
         GENERATE_INFOPLIST_FILE: "NO"
         INFOPLIST_FILE: Support/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.growl.example.GrowlAdsExample
+        PRODUCT_BUNDLE_IDENTIFIER: com.elo.example.EloAdsExample
         SWIFT_VERSION: "5.0"

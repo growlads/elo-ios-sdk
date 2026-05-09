@@ -18,7 +18,7 @@ In Xcode: **File → Add Package Dependencies**, then enter:
 https://github.com/growlads/elo-ios-sdk
 ```
 
-Pick **Up to Next Major Version** from `0.0.1`, and add the `GrowlAds` library to your target.
+Pick **Up to Next Major Version** from `0.0.1`, and add the `EloAds` library to your target.
 
 Or in `Package.swift`:
 
@@ -32,20 +32,20 @@ dependencies: [
 .target(
     name: "YourApp",
     dependencies: [
-        .product(name: "GrowlAds", package: "elo-ios-sdk"),
+        .product(name: "EloAds", package: "elo-ios-sdk"),
     ]
 ),
 ```
 
-`import GrowlAds` is the entire SDK surface.
+`import EloAds` is the entire SDK surface.
 
 ## Quick start
 
 ```swift
-import GrowlAds
+import EloAds
 
 // 1. Initialize once at app launch.
-Growl.initialize(
+Elo.initialize(
     publisherId: "your-publisher-id",
     adUnitId: "your-ad-unit-id"
 )
@@ -57,7 +57,7 @@ let messages: [ChatMessage] = [
 ]
 
 // 3. Ask for an ad. `loadAd` is non-throwing and returns an exhaustive enum.
-let result = await Growl.loadAd(messages: messages)
+let result = await Elo.loadAd(messages: messages)
 
 switch result {
 case .loaded(let ad):
@@ -72,11 +72,11 @@ case .error(let message):
 
 ## SwiftUI
 
-`GrowlAdView` accepts an `AdResult` directly and hides itself on `.noFill` or `.error`, so you can hand it the result without branching:
+`EloAdView` accepts an `AdResult` directly and hides itself on `.noFill` or `.error`, so you can hand it the result without branching:
 
 ```swift
 import SwiftUI
-import GrowlAds
+import EloAds
 
 struct ChatView: View {
     @State private var adResult: AdResult?
@@ -90,10 +90,10 @@ struct ChatView: View {
         VStack {
             // ...your chat content...
 
-            GrowlAdView(result: adResult)
+            EloAdView(result: adResult)
         }
         .task {
-            adResult = await Growl.loadAd(messages: messages)
+            adResult = await Elo.loadAd(messages: messages)
         }
     }
 }
@@ -101,7 +101,7 @@ struct ChatView: View {
 
 ## Mediation (optional)
 
-> **Available from v0.0.8.** Earlier releases don't ship the `GrowlAdsMediationAdMob` product yet, so the snippets below won't resolve until you bump the SDK pin to v0.0.8.
+> **Available from v0.0.8.** Earlier releases don't ship the `EloAdsMediationAdMob` product yet, so the snippets below won't resolve until you bump the SDK pin to v0.0.8.
 
 Elo runs a parallel first-price auction across its own demand and any mediation adapters you register. Adapters are opt-in: each one is a separate library product on this same package, so you only link the networks you actually want bidding.
 
@@ -109,11 +109,11 @@ Elo runs a parallel first-price auction across its own demand and any mediation 
 
 | Network | Product | Status |
 |---------|---------|--------|
-| AdMob | `GrowlAdsMediationAdMob` | First-party |
+| AdMob | `EloAdsMediationAdMob` | First-party |
 
 ### Wiring it up
 
-Add the `GrowlAdsMediationAdMob` product to your target and switch from `Growl.initialize` to `Growl.configure(with:)` so you can pass an `adapters` list:
+Add the `EloAdsMediationAdMob` product to your target and switch from `Elo.initialize` to `Elo.configure(with:)` so you can pass an `adapters` list:
 
 ```swift
 dependencies: [
@@ -123,20 +123,20 @@ targets: [
     .target(
         name: "YourApp",
         dependencies: [
-            .product(name: "GrowlAds", package: "elo-ios-sdk"),
-            .product(name: "GrowlAdsMediationAdMob", package: "elo-ios-sdk"),
+            .product(name: "EloAds", package: "elo-ios-sdk"),
+            .product(name: "EloAdsMediationAdMob", package: "elo-ios-sdk"),
         ]
     ),
 ]
 ```
 
 ```swift
-import GrowlAds
-import GrowlAdsMediationAdMob
+import EloAds
+import EloAdsMediationAdMob
 
-Growl.configure(
-    with: GrowlConfiguration(
-        growl: GrowlNetworkConfiguration(
+Elo.configure(
+    with: EloConfiguration(
+        elo: EloNetworkConfiguration(
             publisherId: "YOUR_PUBLISHER_ID",
             adUnitId: "YOUR_AD_UNIT_ID"
         ),
@@ -148,9 +148,9 @@ Growl.configure(
 )
 ```
 
-Render, click, and impression telemetry are unchanged — adapter creatives surface through the same `GrowlAdView` / `GrowlBadgeAdView` / `GrowlChatAdView` components.
+Render, click, and impression telemetry are unchanged — adapter creatives surface through the same `EloAdView` / `EloBadgeAdView` / `EloChatAdView` components.
 
-Per-adapter setup (manifest keys, price tiers, consent forwarding) lives in [`Sources/GrowlAdsMediationAdMob/README.md`](Sources/GrowlAdsMediationAdMob/README.md). Writing a third-party adapter against the v1 contract isn't documented publicly yet — open an issue and tag a maintainer if that's what you're after.
+Per-adapter setup (manifest keys, price tiers, consent forwarding) lives in [`Sources/EloAdsMediationAdMob/README.md`](Sources/EloAdsMediationAdMob/README.md). Writing a third-party adapter against the v1 contract isn't documented publicly yet — open an issue and tag a maintainer if that's what you're after.
 
 ## Example
 
@@ -158,10 +158,10 @@ The [`Example/`](Example/) folder contains a runnable iOS app you can open in Xc
 
 ```sh
 cd Example
-open GrowlAdsExample.xcodeproj
+open EloAdsExample.xcodeproj
 ```
 
-Press ▶ in Xcode (iPhone simulator) and tap **Load ad** to fire a contextual request. Replace the placeholder publisher/ad-unit IDs in `Sources/GrowlAdsExampleApp.swift` with values from your Elo dashboard before expecting real fills.
+Press ▶ in Xcode (iPhone simulator) and tap **Load ad** to fire a contextual request. Replace the placeholder publisher/ad-unit IDs in `Sources/EloAdsExampleApp.swift` with values from your Elo dashboard before expecting real fills.
 
 ## Crash reporting
 

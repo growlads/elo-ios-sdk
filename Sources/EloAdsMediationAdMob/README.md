@@ -1,6 +1,6 @@
 # Elo AdMob Mediation Adapter
 
-`GrowlAdsMediationAdMob` adds Google AdMob native demand to the Elo iOS SDK's client-side mediation auction.
+`EloAdsMediationAdMob` adds Google AdMob native demand to the Elo iOS SDK's client-side mediation auction.
 
 ## Scope
 
@@ -17,9 +17,9 @@ native-only.
 AdMob only counts impressions and clicks for native ads displayed inside a
 registered `GADNativeAdView`. The adapter therefore always attaches an
 `AdRenderer` that embeds `GADNativeAdView` (AdMob-owned MediaView + headline
-+ body) inside `GrowlAdView`, so every successful AdMob fill is billable.
++ body) inside `EloAdView`, so every successful AdMob fill is billable.
 
-`GrowlBadgeAdView` and `GrowlChatAdView` draw Elo's SwiftUI card layout
+`EloBadgeAdView` and `EloChatAdView` draw Elo's SwiftUI card layout
 and do not honor the renderer. They are safe surfaces for Elo-sourced
 creatives but **must not** be used for AdMob bids — showing the same
 `GADNativeAd` in non-registered views breaks tracking and violates AdMob
@@ -27,22 +27,22 @@ policy. Branch on `ad.requiresCustomRendering` in host code to choose
 which surfaces to present:
 
 ```swift
-GrowlAdView(ad: ad)
+EloAdView(ad: ad)
 
 if !ad.requiresCustomRendering {
-    GrowlBadgeAdView(ad: ad)
-    GrowlChatAdView(ad: ad)
+    EloBadgeAdView(ad: ad)
+    EloChatAdView(ad: ad)
 }
 ```
 
 Implications for host apps:
 
-- Do not wrap `GrowlAdView` in your own tap handler when the ad requires
+- Do not wrap `EloAdView` in your own tap handler when the ad requires
   custom rendering; AdMob owns click attribution.
 - Ensure `GADApplicationIdentifier` is present before startup.
 - Expect the AdMob-owned native layout (taller than Elo's compact card) to
   control presentation for AdMob fills.
-- Display a single `GrowlAdView` per auction result; a `GADNativeAd` can
+- Display a single `EloAdView` per auction result; a `GADNativeAd` can
   only be registered against one `GADNativeAdView` at a time.
 
 ## Installation
@@ -50,8 +50,8 @@ Implications for host apps:
 Add both products to your app target:
 
 ```swift
-.product(name: "GrowlAds", package: "GrowlAds"),
-.product(name: "GrowlAdsMediationAdMob", package: "GrowlAds"),
+.product(name: "EloAds", package: "EloAds"),
+.product(name: "EloAdsMediationAdMob", package: "EloAds"),
 ```
 
 ## Required App Configuration
@@ -68,12 +68,12 @@ Without this key, the Google Mobile Ads SDK fails during startup.
 ## Example Setup
 
 ```swift
-import GrowlAds
-import GrowlAdsMediationAdMob
+import EloAds
+import EloAdsMediationAdMob
 
-Growl.configure(
+Elo.configure(
     with: .init(
-        growl: .init(
+        elo: .init(
             publisherId: "YOUR_GROWL_PUBLISHER_ID",
             adUnitId: "YOUR_GROWL_AD_UNIT_ID"
         ),
@@ -142,7 +142,7 @@ directly and need no adapter wiring:
 - **GPP (Global Privacy Platform)** — `IABGPP_HDR_GppString` /
   `IABGPP_HDR_Sections` are read by GMA from `NSUserDefaults`.
 - **Google UMP** (`GoogleUserMessagingPlatform`) — if you use Google's own
-  CMP, present its form before calling `Growl.configure(with:)` so the IAB
+  CMP, present its form before calling `Elo.configure(with:)` so the IAB
   keys are populated before the first auction.
 
 When `gdprApplies` is `false` or unknown, no NPA flag is set and AdMob serves
@@ -161,10 +161,10 @@ If you upgrade the Google SDK major version, rebuild the example app and rerun p
 If AdMob does not participate in auctions:
 
 1. Verify `GADApplicationIdentifier` is present in `Info.plist`.
-2. Verify the app links `GrowlAdsMediationAdMob`.
+2. Verify the app links `EloAdsMediationAdMob`.
 3. Verify the app is using a native AdMob ad unit, not a banner unit.
 4. Verify the request is using a test ad unit or a configured test device.
-5. Inspect `Growl.mediationDebugSnapshot()` or the example app's mediation debug panel to distinguish:
+5. Inspect `Elo.mediationDebugSnapshot()` or the example app's mediation debug panel to distinguish:
    - adapter startup failure
    - timeout
    - explicit no-fill
