@@ -13,5 +13,3 @@ Initial public release. SDK distributed as an XCFramework via Swift Package Mana
 - Manual tracking hooks: `Elo.trackRender`, `Elo.trackImpression`, `Elo.trackClick`.
 - Optional AdMob mediation via the `EloAdsMediationAdMob` product (source target).
 - Minimum deployment target: iOS 16.
-
-> The `Elo*` symbol names reflect the historical brand; the consumer-facing product is **Elo** ([elo.ad](https://elo.ad)).
