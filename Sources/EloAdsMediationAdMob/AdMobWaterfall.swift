@@ -1,5 +1,5 @@
 import Foundation
-import GrowlAds
+import EloAds
 
 /// Sequential price-tier waterfall used by ``AdMobNetworkAdapter`` to drive
 /// AdMob fills against an explicit eCPM ladder.
@@ -18,11 +18,11 @@ enum AdMobWaterfall {
     ///   - timeout: Total time budget. Tiers are not started after the
     ///     deadline; an in-flight load is allowed to complete.
     ///   - loadAd: Closure that loads an ad for a specific tier ad unit and
-    ///     returns the rendered ``GrowlAd`` (or `nil` for no-fill).
+    ///     returns the rendered ``EloAd`` (or `nil` for no-fill).
     static func firstFill(
         tiers: [AdMobPriceTier],
         timeout: TimeInterval,
-        loadAd: (String) async throws -> GrowlAd?
+        loadAd: (String) async throws -> EloAd?
     ) async throws -> AdBid? {
         let deadline = Date().addingTimeInterval(timeout)
         for tier in tiers {

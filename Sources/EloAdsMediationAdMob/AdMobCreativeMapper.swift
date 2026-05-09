@@ -1,5 +1,5 @@
 import Foundation
-import GrowlAds
+import EloAds
 
 struct AdMobNativeAssets: Sendable, Equatable {
     let identifier: String
@@ -13,12 +13,12 @@ enum AdMobCreativeMapper {
         from assets: AdMobNativeAssets,
         tracker: some AdTracker,
         renderer: AdRenderer?
-    ) -> GrowlAd? {
+    ) -> EloAd? {
         guard let headline = assets.headline, !headline.isEmpty else {
             return nil
         }
 
-        return GrowlAd(
+        return EloAd(
             id: assets.identifier,
             title: headline,
             description: assets.body,

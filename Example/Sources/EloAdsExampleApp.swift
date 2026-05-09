@@ -1,21 +1,21 @@
 import SwiftUI
-import GrowlAds
+import EloAds
 
-// Replace these with your own publisher / ad-unit IDs from the Growl
+// Replace these with your own publisher / ad-unit IDs from the Elo
 // dashboard before shipping. The example will run with the placeholders
 // in place but every request will return `.error(.notConfigured)` until
 // you swap them.
 private enum DemoConfig {
-    static let growlPublisherID = "your-publisher-id"
-    static let growlAdUnitID    = "your-ad-unit-id"
+    static let eloPublisherID = "your-publisher-id"
+    static let eloAdUnitID    = "your-ad-unit-id"
 }
 
 @main
-struct GrowlAdsExampleApp: App {
+struct EloAdsExampleApp: App {
     init() {
-        Growl.initialize(
-            publisherId: DemoConfig.growlPublisherID,
-            adUnitId: DemoConfig.growlAdUnitID
+        Elo.initialize(
+            publisherId: DemoConfig.eloPublisherID,
+            adUnitId: DemoConfig.eloAdUnitID
         )
     }
 
@@ -37,7 +37,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Text("Growl Ads Demo")
+            Text("Elo Ads Demo")
                 .font(.largeTitle.bold())
 
             Text("Tap below to request a contextual ad based on the conversation snippet above.")
@@ -58,10 +58,10 @@ struct ContentView: View {
             .buttonStyle(.borderedProminent)
             .disabled(isLoading)
 
-            // GrowlAdView renders the loaded ad and hides itself on
+            // EloAdView renders the loaded ad and hides itself on
             // `.noFill` / `.error`, so handing it the result directly is
             // the path of least resistance.
-            GrowlAdView(result: adResult)
+            EloAdView(result: adResult)
                 .padding(.horizontal)
 
             if let adResult { outcomeRow(for: adResult) }
@@ -74,7 +74,7 @@ struct ContentView: View {
     private func loadAd() {
         isLoading = true
         Task {
-            adResult = await Growl.loadAd(messages: messages)
+            adResult = await Elo.loadAd(messages: messages)
             isLoading = false
         }
     }

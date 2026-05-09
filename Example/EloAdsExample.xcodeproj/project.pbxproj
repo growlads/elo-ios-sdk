@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		16AE9BC1EAD6640E75EA7EB1 /* GrowlAdsExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756782BD2969FF8A2968BC47 /* GrowlAdsExampleApp.swift */; };
-		CA91FBDD9901DFBD3ABD0476 /* GrowlAds in Frameworks */ = {isa = PBXBuildFile; productRef = 3F51DE1061E76537EF874660 /* GrowlAds */; };
+		16AE9BC1EAD6640E75EA7EB1 /* EloAdsExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756782BD2969FF8A2968BC47 /* EloAdsExampleApp.swift */; };
+		CA91FBDD9901DFBD3ABD0476 /* EloAds in Frameworks */ = {isa = PBXBuildFile; productRef = 3F51DE1061E76537EF874660 /* EloAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		2692E45D353884DBAEC0BE92 /* GrowlAdsExample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GrowlAdsExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2692E45D353884DBAEC0BE92 /* EloAdsExample.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = EloAdsExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		688BB00DC3D5CBC2C08BC08F /* elo-ios-sdk */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "elo-ios-sdk"; path = ..; sourceTree = SOURCE_ROOT; };
-		756782BD2969FF8A2968BC47 /* GrowlAdsExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowlAdsExampleApp.swift; sourceTree = "<group>"; };
+		756782BD2969FF8A2968BC47 /* EloAdsExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EloAdsExampleApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -22,7 +22,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CA91FBDD9901DFBD3ABD0476 /* GrowlAds in Frameworks */,
+				CA91FBDD9901DFBD3ABD0476 /* EloAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,7 +32,7 @@
 		2C55A6324A6B0C96E76EEA9C /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				756782BD2969FF8A2968BC47 /* GrowlAdsExampleApp.swift */,
+				756782BD2969FF8A2968BC47 /* EloAdsExampleApp.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -49,7 +49,7 @@
 		9532D0225C5CC2CB77BF69F1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2692E45D353884DBAEC0BE92 /* GrowlAdsExample.app */,
+				2692E45D353884DBAEC0BE92 /* EloAdsExample.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -65,9 +65,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E1F70DDE44BB83B0487F8FF1 /* GrowlAdsExample */ = {
+		E1F70DDE44BB83B0487F8FF1 /* EloAdsExample */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1A3F17B5DC45F1FEEE12BFF9 /* Build configuration list for PBXNativeTarget "GrowlAdsExample" */;
+			buildConfigurationList = 1A3F17B5DC45F1FEEE12BFF9 /* Build configuration list for PBXNativeTarget "EloAdsExample" */;
 			buildPhases = (
 				71A493220106947963080206 /* Sources */,
 				139AD387A9783AC4EC0E010E /* Frameworks */,
@@ -76,12 +76,12 @@
 			);
 			dependencies = (
 			);
-			name = GrowlAdsExample;
+			name = EloAdsExample;
 			packageProductDependencies = (
-				3F51DE1061E76537EF874660 /* GrowlAds */,
+				3F51DE1061E76537EF874660 /* EloAds */,
 			);
-			productName = GrowlAdsExample;
-			productReference = 2692E45D353884DBAEC0BE92 /* GrowlAdsExample.app */;
+			productName = EloAdsExample;
+			productReference = 2692E45D353884DBAEC0BE92 /* EloAdsExample.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -95,7 +95,7 @@
 				TargetAttributes = {
 				};
 			};
-			buildConfigurationList = 51600B282D15B04E82C0142D /* Build configuration list for PBXProject "GrowlAdsExample" */;
+			buildConfigurationList = 51600B282D15B04E82C0142D /* Build configuration list for PBXProject "EloAdsExample" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -112,7 +112,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				E1F70DDE44BB83B0487F8FF1 /* GrowlAdsExample */,
+				E1F70DDE44BB83B0487F8FF1 /* EloAdsExample */,
 			);
 		};
 /* End PBXProject section */
@@ -122,7 +122,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				16AE9BC1EAD6640E75EA7EB1 /* GrowlAdsExampleApp.swift in Sources */,
+				16AE9BC1EAD6640E75EA7EB1 /* EloAdsExampleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -196,7 +196,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.growl.example.GrowlAdsExample;
+				PRODUCT_BUNDLE_IDENTIFIER = com.elo.example.EloAdsExample;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -214,7 +214,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.growl.example.GrowlAdsExample;
+				PRODUCT_BUNDLE_IDENTIFIER = com.elo.example.EloAdsExample;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -287,7 +287,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1A3F17B5DC45F1FEEE12BFF9 /* Build configuration list for PBXNativeTarget "GrowlAdsExample" */ = {
+		1A3F17B5DC45F1FEEE12BFF9 /* Build configuration list for PBXNativeTarget "EloAdsExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				39FCD46447179C25BBD6ED66 /* Debug */,
@@ -296,7 +296,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		51600B282D15B04E82C0142D /* Build configuration list for PBXProject "GrowlAdsExample" */ = {
+		51600B282D15B04E82C0142D /* Build configuration list for PBXProject "EloAdsExample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9865C2E4E554FAA7BB7A3DD2 /* Debug */,
@@ -315,9 +315,9 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		3F51DE1061E76537EF874660 /* GrowlAds */ = {
+		3F51DE1061E76537EF874660 /* EloAds */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = GrowlAds;
+			productName = EloAds;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

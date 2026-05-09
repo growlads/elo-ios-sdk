@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-The **public, consumer-facing distribution** of the Growl iOS SDK — what app developers SPM-fetch from `https://github.com/growlads/elo-ios-sdk`. This repo is **not** where the SDK is developed.
+The **public, consumer-facing distribution** of the Elo iOS SDK — what app developers SPM-fetch from `https://github.com/growlads/elo-ios-sdk`. This repo is **not** where the SDK is developed.
 
 Source-of-truth lives in a separate, private source repository. Bugs are fixed there; releases are published from there into this repo by an automated workflow.
 
@@ -26,12 +26,12 @@ Things that **can** be edited directly here:
 
 ## What's in `Package.swift`
 
-> **As of v0.0.8** (the first release after the mediation consolidation), this file declares two products and one external dep. On v0.0.7 and earlier it's one product (`GrowlAds`), no deps; that older shape will keep resolving for any pinned consumers but isn't documented here. The publish workflow regenerates this file on every release.
+> **As of v0.0.8** (the first release after the mediation consolidation), this file declares two products and one external dep. On v0.0.7 and earlier it's one product (`EloAds`), no deps; that older shape will keep resolving for any pinned consumers but isn't documented here. The publish workflow regenerates this file on every release.
 
 Two products and one external dep:
 
-- `GrowlAds` — `binaryTarget` pointing at a GitHub Releases asset (`GrowlAds.xcframework.zip`). This is the SDK. There is no SDK Swift source in this repo to read; the implementation lives in the source repo.
-- `GrowlAdsMediationAdMob` — opt-in source target under `Sources/GrowlAdsMediationAdMob/`, mirrored verbatim from the source repo by the publish workflow. Pulls in `swift-package-manager-google-mobile-ads` (13.x) only when consumers actually link the product.
+- `EloAds` — `binaryTarget` pointing at a GitHub Releases asset (`EloAds.xcframework.zip`). This is the SDK. There is no SDK Swift source in this repo to read; the implementation lives in the source repo.
+- `EloAdsMediationAdMob` — opt-in source target under `Sources/EloAdsMediationAdMob/`, mirrored verbatim from the source repo by the publish workflow. Pulls in `swift-package-manager-google-mobile-ads` (13.x) only when consumers actually link the product.
 
 Both products track the same release cadence: a single tag publishes the SDK binary and the matching adapter source.
 
@@ -43,11 +43,11 @@ There is no test target in this repo. The integration is verified by running the
 
 ```sh
 cd Example
-open GrowlAdsExample.xcodeproj
+open EloAdsExample.xcodeproj
 # Run on iPhone simulator. Tap "Load ad".
 ```
 
-Replace the placeholder publisher/ad-unit IDs in `Example/Sources/GrowlAdsExampleApp.swift` with real values from the Growl dashboard before expecting real fills (test ad units fill freely).
+Replace the placeholder publisher/ad-unit IDs in `Example/Sources/EloAdsExampleApp.swift` with real values from the Elo dashboard before expecting real fills (test ad units fill freely).
 
 If you need to validate that a freshly published version actually resolves cleanly, do it from a throwaway consumer project, not from this repo's own `Package.resolved`.
 
@@ -56,7 +56,7 @@ If you need to validate that a freshly published version actually resolves clean
 The full release flow lives in the source repo. From this repo's perspective, releases arrive as:
 
 - A new tag matching the version embedded in `Package.swift`'s `binaryTarget` URL (currently `0.0.1`).
-- A GitHub Release with `GrowlAds.xcframework.zip` and dSYMs attached.
+- A GitHub Release with `EloAds.xcframework.zip` and dSYMs attached.
 - A commit updating `Package.swift` (binaryTarget URL + checksum).
 
 If those three are out of sync — e.g. `Package.swift` references a version that doesn't have a release artifact yet — the publish workflow either failed mid-flight or someone edited `Package.swift` by hand. Don't try to "fix forward" here; check upstream.
@@ -71,4 +71,4 @@ Inferred from the code, README content, and the source-repo's publish pipeline. 
 - **README divergence is intentional.** The source-repo's `README.md` is dev-facing (build/test/release flow). This repo's `README.md` is consumer-facing (install/integrate/AdMob wiring). They are not synced and should not be — changes belong wherever the audience cares.
 - **Version coupling is total.** The `Package.swift` declared version, the `binaryTarget` URL's version path segment, the `CFBundleShortVersionString` baked into the XCFramework, the `sdkVersion` constant inside the binary, and the GitHub Release tag must all match. The publish script enforces this; manual edits anywhere risk drift that breaks `swift package resolve` for every consumer.
 - **Manual `main` commits.** Outside the publish workflow, only the editable paths listed in "Do not edit by hand" should land here directly. Anything else implies the publish workflow either failed mid-flight or is being bypassed — investigate before "fixing forward."
-- **`Example/` placeholder IDs.** `Example/Sources/GrowlAdsExampleApp.swift` ships with placeholder publisher/ad-unit IDs. Real IDs go in via consumer-local edits and should not be committed to this public repo.
+- **`Example/` placeholder IDs.** `Example/Sources/EloAdsExampleApp.swift` ships with placeholder publisher/ad-unit IDs. Real IDs go in via consumer-local edits and should not be committed to this public repo.

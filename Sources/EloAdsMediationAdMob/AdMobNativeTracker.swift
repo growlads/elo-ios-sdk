@@ -1,5 +1,5 @@
 import Foundation
-import GrowlAds
+import EloAds
 
 #if canImport(GoogleMobileAds)
 @preconcurrency import GoogleMobileAds
@@ -9,7 +9,7 @@ import GrowlAds
 /// AdMob records impressions and clicks automatically once a `GADNativeAdView`
 /// is assigned a `GADNativeAd`. The heavy lifting lives in
 /// ``AdMobNativeAdRenderer`` and ``AdMobNativeAdDelegateBridge``. This tracker
-/// exists only to satisfy the ``AdTracker`` contract that ``GrowlAd``
+/// exists only to satisfy the ``AdTracker`` contract that ``EloAd``
 /// requires, so all methods are intentional no-ops.
 package struct AdMobNativeTracker: AdTracker {
     package init(nativeAd: GADNativeAd) {}
