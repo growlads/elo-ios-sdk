@@ -3,8 +3,8 @@ import Foundation
 /// Visual treatment for AdMob native ads built by ``AdMobNativeAdRenderer``.
 ///
 /// The layout is fixed at adapter init time — every native fill from a given
-/// ``AdMobNetworkAdapter`` uses the same shape. AdMob's `GADNativeAd` may
-/// only register against a single `GADNativeAdView` at a time, so per-ad
+/// ``AdMobNetworkAdapter`` uses the same shape. AdMob's `NativeAd` may
+/// only register against a single `NativeAdView` at a time, so per-ad
 /// per-mount layout choice would conflict with that contract anyway.
 ///
 /// Pick the layout that matches the surface where the ad will display:
@@ -20,7 +20,7 @@ public enum AdMobNativeLayout: Sendable, Hashable, CaseIterable {
     /// aspect ratio.
     case compactHorizontal
 
-    /// `GADMediaView` spans the full card width with its height driven by
+    /// `MediaView` spans the full card width with its height driven by
     /// `mediaContent.aspectRatio`. Headline and body stack vertically below
     /// the media. Best for surfaces where the creative deserves real
     /// estate (e.g. a dedicated slot under the assistant response, a
