@@ -101,6 +101,8 @@ struct ChatView: View {
 
 ## Mediation (optional)
 
+> **Available from v0.0.8.** Earlier releases don't ship the `GrowlAdsMediationAdMob` product yet, so the snippets below won't resolve until you bump the SDK pin to v0.0.8.
+
 Elo runs a parallel first-price auction across its own demand and any mediation adapters you register. Adapters are opt-in: each one is a separate library product on this same package, so you only link the networks you actually want bidding.
 
 ### Available adapters
@@ -109,15 +111,13 @@ Elo runs a parallel first-price auction across its own demand and any mediation 
 |---------|---------|--------|
 | AdMob | `GrowlAdsMediationAdMob` | First-party |
 
-> Heads up: the AdMob adapter used to live in a separate `elo-ios-mediation` package. As of this release it ships from the same SwiftPM package as the core SDK — drop the second `.package(url:)` line and add `GrowlAdsMediationAdMob` to your target dependencies.
-
 ### Wiring it up
 
 Add the `GrowlAdsMediationAdMob` product to your target and switch from `Growl.initialize` to `Growl.configure(with:)` so you can pass an `adapters` list:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.0.1"),
+    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.0.8"),
 ],
 targets: [
     .target(
@@ -140,14 +140,17 @@ Growl.configure(
             publisherId: "YOUR_PUBLISHER_ID",
             adUnitId: "YOUR_AD_UNIT_ID"
         ),
-        adapters: [/* AdMobNetworkAdapter(priceTiers: [...], ...) */]
+        adapters: [
+            // Replace `priceTiers` and ad-unit IDs with values from your AdMob dashboard.
+            AdMobNetworkAdapter(priceTiers: [/* AdMobPriceTier(...) */])
+        ]
     )
 )
 ```
 
 Render, click, and impression telemetry are unchanged — adapter creatives surface through the same `GrowlAdView` / `GrowlBadgeAdView` / `GrowlChatAdView` components.
 
-Per-adapter setup (manifest keys, price tiers, consent forwarding) lives in [`Sources/GrowlAdsMediationAdMob/README.md`](Sources/GrowlAdsMediationAdMob/README.md). The v1 contract for writing your own adapter is documented in [`ADAPTER_AUTHOR_GUIDE.md`](https://github.com/growlads/elo-ios-sdk-source/blob/main/ADAPTER_AUTHOR_GUIDE.md) in the source repo.
+Per-adapter setup (manifest keys, price tiers, consent forwarding) lives in [`Sources/GrowlAdsMediationAdMob/README.md`](Sources/GrowlAdsMediationAdMob/README.md). Writing a third-party adapter against the v1 contract isn't documented publicly yet — open an issue and tag a maintainer if that's what you're after.
 
 ## Example
 

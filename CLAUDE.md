@@ -26,12 +26,14 @@ Things that **can** be edited directly here:
 
 ## What's in `Package.swift`
 
+> **As of v0.0.8** (the first release after the mediation consolidation), this file declares two products and one external dep. On v0.0.7 and earlier it's one product (`GrowlAds`), no deps; that older shape will keep resolving for any pinned consumers but isn't documented here. The publish workflow regenerates this file on every release.
+
 Two products and one external dep:
 
 - `GrowlAds` — `binaryTarget` pointing at a GitHub Releases asset (`GrowlAds.xcframework.zip`). This is the SDK. There is no SDK Swift source in this repo to read; the implementation lives in the source repo.
 - `GrowlAdsMediationAdMob` — opt-in source target under `Sources/GrowlAdsMediationAdMob/`, mirrored verbatim from the source repo by the publish workflow. Pulls in `swift-package-manager-google-mobile-ads` (13.x) only when consumers actually link the product.
 
-Both products track the same release cadence: a single tag publishes the SDK binary and the matching adapter source. Previously the AdMob adapter shipped from a separate `growlads/elo-ios-mediation` package — that repo is being archived and you should drop the second `.package(url:)` line during upgrade.
+Both products track the same release cadence: a single tag publishes the SDK binary and the matching adapter source.
 
 Min platform is `iOS 16` (load-bearing — see the source repo for why).
 
