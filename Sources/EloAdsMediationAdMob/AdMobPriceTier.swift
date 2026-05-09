@@ -1,26 +1,16 @@
 import Foundation
 
-/// One AdMob ad unit paired with the eCPM Elo should report when that ad
-/// unit fills.
+/// Internal pairing of an AdMob ad unit with the eCPM the adapter reports
+/// when that unit fills.
 ///
-/// Publishers create AdMob ad units configured at fixed eCPM floors (e.g.
-/// `$5`, `$2`, `$0.50`) and pass them to ``AdMobNetworkAdapter`` highest-tier
-/// first. The adapter loads tiers sequentially and returns the first fill —
-/// that tier's ``eCpm`` is the bid value reported to Elo's auction.
-///
-/// The Google Mobile Ads SDK does not expose a programmatic accessor for the
-/// real bid price of a loaded ad, so the price-tier list is the authoritative
-/// source of truth for AdMob's eCPM in this auction. *Which tier fills* is
-/// determined by AdMob's actual demand at each floor.
-public struct AdMobPriceTier: Sendable, Equatable {
+/// The public ``AdMobNetworkAdapter`` API takes a single `adUnitId`; this
+/// type exists so the internal waterfall machinery can keep its current
+/// shape and so future SDK-side experiments (server-driven tiers, A/B-tuned
+/// floors) have a place to land without changing publisher integration code.
+struct AdMobPriceTier: Sendable, Equatable {
     /// AdMob native ad unit id, e.g. `"ca-app-pub-3940256099942544/3986624511"`.
-    public let adUnitId: String
+    let adUnitId: String
 
     /// Bid value reported to Elo's mediator when this tier fills.
-    public let eCpm: Double
-
-    public init(adUnitId: String, eCpm: Double) {
-        self.adUnitId = adUnitId
-        self.eCpm = eCpm
-    }
+    let eCpm: Double
 }

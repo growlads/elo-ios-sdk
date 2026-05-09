@@ -14,11 +14,7 @@ import GoogleMobileAds
 ///         adUnitId: "YOUR_GROWL_AD_UNIT"
 ///     ),
 ///     adapters: [
-///         AdMobNetworkAdapter(priceTiers: [
-///             AdMobPriceTier(adUnitId: "ca-app-pub-.../high",  eCpm: 5.00),
-///             AdMobPriceTier(adUnitId: "ca-app-pub-.../mid",   eCpm: 2.00),
-///             AdMobPriceTier(adUnitId: "ca-app-pub-.../floor", eCpm: 0.50),
-///         ]),
+///         AdMobNetworkAdapter(adUnitId: "ca-app-pub-.../main"),
 ///     ]
 /// ))
 /// ```
@@ -28,22 +24,13 @@ import GoogleMobileAds
 /// `EloAdView` gains format siblings.
 ///
 /// Rendering & billing: AdMob requires creatives to be displayed inside a
-/// `GADNativeAdView` for impressions and clicks to count. The adapter always
+/// `NativeAdView` for impressions and clicks to count. The adapter always
 /// attaches an ``AdMobNativeAdRenderer`` to the returned ``EloAd`` so
 /// ``EloAdView`` embeds an AdMob-owned layout and the ad is billable.
 /// `EloBadgeAdView` and `EloChatAdView` are Elo-styled variants that
 /// ignore the renderer — they are not safe surfaces for AdMob creatives.
 /// Branch on ``EloAd/requiresCustomRendering`` to choose which surfaces to
 /// show for a given bid.
-///
-/// eCPM: `GADNativeAd` does not expose a programmatic bid price. To make
-/// AdMob fills compete fairly in Elo's auction, publishers configure AdMob
-/// ad units at fixed eCPM floors and pass them as ``priceTiers`` ordered
-/// highest-first. The adapter loads tiers sequentially; the first tier that
-/// fills wins, and that tier's ``AdMobPriceTier/eCpm`` is the bid value
-/// reported to the mediator. The price floors are authoritative — AdMob does
-/// not surface a real bid price, but *which tier fills* is driven by AdMob's
-/// actual demand at each floor.
 public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked Sendable {
     public let networkId = "admob"
 
@@ -64,30 +51,37 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
     private let nativeAdStyle: AdMobNativeStyle
     private let nativeAdLayout: AdMobNativeLayout
 
+    /// Default eCPM reported when an AdMob native fill wins the auction.
+    /// `NativeAd` does not expose a programmatic bid price, and publishers
+    /// no longer configure tier floors at the public API surface; the SDK
+    /// reports a single placeholder bid so AdMob participates as a fallback.
+    /// Tune via internal experimentation, not publisher config.
+    static let defaultECpm: Double = 1.0
+
     /// - Parameters:
-    ///   - priceTiers: AdMob ad units ordered highest-eCPM-first. The adapter
-    ///     loads tiers sequentially and returns the first fill, with that
-    ///     tier's ``AdMobPriceTier/eCpm`` as the bid value. Must be non-empty.
+    ///   - adUnitId: AdMob native ad unit id, e.g.
+    ///     `"ca-app-pub-3940256099942544/3986624511"`. The adapter loads this
+    ///     unit on every bid; if the host publisher wants tier-based price
+    ///     flooring, configure it AdMob-side on a single mediation ad unit.
     ///   - rootViewController: Closure returning the view controller AdMob
     ///     should anchor its ad loading to. Use `nil` only if you know the
     ///     ad format doesn't need one.
     ///   - nativeAdStyle: Visual overrides applied to the
-    ///     ``GADNativeAdView`` that ``AdMobNativeAdRenderer`` builds. Only
+    ///     ``NativeAdView`` that ``AdMobNativeAdRenderer`` builds. Only
     ///     non-nil fields are applied; everything else falls back to system
     ///     colors. Use this to keep AdMob fills visually consistent with the
     ///     SwiftUI ``EloAdStyle`` you've applied to Elo-direct cards.
     ///   - nativeAdLayout: Visual treatment of the AdMob native card.
     ///     Defaults to ``AdMobNativeLayout/compactHorizontal``. Use
-    ///     ``AdMobNativeLayout/heroCard`` for slot-sized surfaces or
-    ///     ``AdMobNativeLayout/listRow`` for dense feeds.
+    ///     ``AdMobNativeLayout/heroCard`` for slot-sized surfaces.
     public init(
-        priceTiers: [AdMobPriceTier],
+        adUnitId: String,
         rootViewController: @escaping @MainActor @Sendable () -> UIViewController? = { nil },
         nativeAdStyle: AdMobNativeStyle = .default,
         nativeAdLayout: AdMobNativeLayout = .compactHorizontal
     ) {
-        precondition(!priceTiers.isEmpty, "AdMobNetworkAdapter requires at least one price tier")
-        self.priceTiers = priceTiers
+        precondition(!adUnitId.isEmpty, "AdMobNetworkAdapter requires a non-empty adUnitId")
+        self.priceTiers = [AdMobPriceTier(adUnitId: adUnitId, eCpm: Self.defaultECpm)]
         self.rootViewControllerProvider = rootViewController
         self.nativeAdStyle = nativeAdStyle
         self.nativeAdLayout = nativeAdLayout
@@ -111,17 +105,17 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
         )
     }
 
-    // MARK: - GADAdLoader async bridge
+    // MARK: - AdLoader async bridge
 
-    private func loadNativeAd(adUnitId: String, request: AdBidRequest) async throws -> GADNativeAd? {
+    private func loadNativeAd(adUnitId: String, request: AdBidRequest) async throws -> NativeAd? {
         let rootVC = await MainActor.run {
             rootViewControllerProvider()
         }
-        Self.applyConsent(request.consent, requestConfiguration: GADMobileAds.sharedInstance().requestConfiguration)
+        Self.applyConsent(request.consent, requestConfiguration: MobileAds.shared.requestConfiguration)
 
-        let gadRequest = GADRequest()
+        let gadRequest = Request()
         if let npaParameters = AdMobConsent.nonPersonalizedAdParameters(for: request.consent) {
-            let extras = GADExtras()
+            let extras = Extras()
             extras.additionalParameters = npaParameters
             gadRequest.register(extras)
         }
@@ -138,7 +132,7 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
         // timeout. `cancel()` resumes the continuation with `CancellationError`
         // and releases the loader's self-retainer so the task unblocks promptly.
         return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<GADNativeAd?, Error>) in
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<NativeAd?, Error>) in
                 loader.start(continuation: continuation)
             }
         } onCancel: {
@@ -148,8 +142,8 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
 
     // MARK: - Decision C — AdMob creative mapping
 
-    /// Map a loaded `GADNativeAd` to Elo's `EloAd` shape and attach an
-    /// ``AdRenderer`` that registers the ad with `GADNativeAdView` at display
+    /// Map a loaded `NativeAd` to Elo's `EloAd` shape and attach an
+    /// ``AdRenderer`` that registers the ad with `NativeAdView` at display
     /// time so AdMob can count impressions and clicks.
     ///
     /// **This is where you decide how AdMob creatives present inside
@@ -172,12 +166,12 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
     /// Return `nil` to reject the creative (the bid becomes a no-fill).
     @MainActor
     static func makeCreative(
-        from nativeAd: GADNativeAd,
+        from nativeAd: NativeAd,
         style: AdMobNativeStyle = .default,
         layout: AdMobNativeLayout = .compactHorizontal
     ) -> EloAd? {
         // Always attach a renderer. AdMob counts impressions and clicks only
-        // when the creative is displayed inside a `GADNativeAdView`;
+        // when the creative is displayed inside a `NativeAdView`;
         // ``EloAdView`` detects the renderer and embeds the AdMob-owned
         // layout. Badge and chat variants remain Elo-styled and are not
         // safe surfaces for AdMob — gate them on
@@ -209,14 +203,14 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
         return ad
     }
 
-    /// Derive a content-stable identifier for a loaded `GADNativeAd`.
+    /// Derive a content-stable identifier for a loaded `NativeAd`.
     ///
     /// Prefer AdMob's `responseIdentifier` (set per ad-request on modern SDK
     /// versions) so the same creative reports the same id across load /
     /// impression / click events. Fall back to the Objective-C object pointer
     /// when the response info is unavailable — still unique for a live ad, but
     /// not stable across memory releases.
-    private static func stableCreativeId(for nativeAd: GADNativeAd) -> String {
+    private static func stableCreativeId(for nativeAd: NativeAd) -> String {
         if let responseId = nativeAd.responseInfo.responseIdentifier, !responseId.isEmpty {
             return "admob:\(responseId)"
         }
@@ -225,13 +219,13 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
 
     private func startGoogleMobileAds() async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            GADMobileAds.sharedInstance().start { _ in
+            MobileAds.shared.start { _ in
                 continuation.resume()
             }
         }
     }
 
-    private static func applyConsent(_ consent: AdConsent, requestConfiguration: GADRequestConfiguration) {
+    private static func applyConsent(_ consent: AdConsent, requestConfiguration: RequestConfiguration) {
         // AdMob exposes COPPA / TFUA configuration globally on the request
         // configuration object. Additional TCF/GPP strings are still owned by
         // the host CMP / Google UMP, so this adapter forwards only the fields
@@ -242,21 +236,21 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
 
 }
 
-/// Bridge GADAdLoader's delegate callbacks into a single-shot async return.
+/// Bridge AdLoader's delegate callbacks into a single-shot async return.
 ///
 /// Construction is split from continuation registration so the surrounding
 /// `withTaskCancellationHandler` can cancel the load before (or while) it is
 /// in flight. The lock orders three states — `pending`, `loading`, `finished`
 /// — so a cancel that races with a successful AdMob callback resolves to a
 /// single resume.
-private final class AdMobNativeAdLoader: NSObject, GADNativeAdLoaderDelegate, @unchecked Sendable {
+private final class AdMobNativeAdLoader: NSObject, NativeAdLoaderDelegate, @unchecked Sendable {
     private let adUnitId: String
     private let rootViewController: UIViewController?
-    private let request: GADRequest
+    private let request: Request
 
     private let lock = NSLock()
-    private var continuation: CheckedContinuation<GADNativeAd?, Error>?
-    private var loader: GADAdLoader?
+    private var continuation: CheckedContinuation<NativeAd?, Error>?
+    private var loader: AdLoader?
     private var selfRetainer: AdMobNativeAdLoader?
     private var completed = false
     private var cancelledBeforeStart = false
@@ -264,7 +258,7 @@ private final class AdMobNativeAdLoader: NSObject, GADNativeAdLoaderDelegate, @u
     init(
         adUnitId: String,
         rootViewController: UIViewController?,
-        request: GADRequest
+        request: Request
     ) {
         self.adUnitId = adUnitId
         self.rootViewController = rootViewController
@@ -275,7 +269,7 @@ private final class AdMobNativeAdLoader: NSObject, GADNativeAdLoaderDelegate, @u
     /// Register the continuation and start the AdMob load. If `cancel()` ran
     /// before this call (the task was already cancelled), resume immediately
     /// with `CancellationError` so the parent task unblocks.
-    func start(continuation: CheckedContinuation<GADNativeAd?, Error>) {
+    func start(continuation: CheckedContinuation<NativeAd?, Error>) {
         lock.lock()
         if cancelledBeforeStart {
             lock.unlock()
@@ -287,8 +281,8 @@ private final class AdMobNativeAdLoader: NSObject, GADNativeAdLoaderDelegate, @u
         // the local `loader` reference would drop before the SDK finishes
         // loading.
         selfRetainer = self
-        let options = GADNativeAdViewAdOptions()
-        let loader = GADAdLoader(
+        let options = NativeAdViewAdOptions()
+        let loader = AdLoader(
             adUnitID: adUnitId,
             rootViewController: rootViewController,
             adTypes: [.native],
@@ -315,22 +309,22 @@ private final class AdMobNativeAdLoader: NSObject, GADNativeAdLoaderDelegate, @u
         finish(.failure(CancellationError()))
     }
 
-    func adLoader(_ adLoader: GADAdLoader, didReceive nativeAd: GADNativeAd) {
+    func adLoader(_ adLoader: AdLoader, didReceive nativeAd: NativeAd) {
         finish(.success(nativeAd))
     }
 
-    func adLoader(_ adLoader: GADAdLoader, didFailToReceiveAdWithError error: Error) {
+    func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {
         // AdMob treats "no fill" as an error code; translate it to a nil bid
         // rather than throwing — no-fill is a normal auction outcome.
         let ns = error as NSError
-        if ns.code == GADErrorCode.noFill.rawValue {
+        if ns.code == RequestError.Code.noFill.rawValue {
             finish(.success(nil))
         } else {
             finish(.failure(error))
         }
     }
 
-    private func finish(_ result: Result<GADNativeAd?, Error>) {
+    private func finish(_ result: Result<NativeAd?, Error>) {
         lock.lock()
         guard !completed else {
             lock.unlock()

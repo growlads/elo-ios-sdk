@@ -5,29 +5,29 @@ import EloAds
 import UIKit
 @preconcurrency import GoogleMobileAds
 
-/// Builds a `GADNativeAdView` for an AdMob native fill in one of several
+/// Builds a `NativeAdView` for an AdMob native fill in one of several
 /// visual treatments selected via ``AdMobNativeLayout``.
 ///
 /// All layouts share the same chrome scaffolding: rounded card background,
-/// "📢 Sponsored" badge, `GADAdChoicesView` in the top-right corner, and the
+/// "📢 Sponsored" badge, `AdChoicesView` in the top-right corner, and the
 /// asset slots (`iconView`/`mediaView`, `headlineView`, `bodyView`) registered
-/// against `GADNativeAdView` so AdMob's tracking sees them as direct children. The
+/// against `NativeAdView` so AdMob's tracking sees them as direct children. The
 /// per-layout `build*Chrome` method only differs in where the assets live
 /// and what their constraints are.
 ///
 /// Why two-phase rendering (`makeView` builds chrome, `update` binds data):
 ///
 /// Mirrors AdMob's official `SwiftUIDemo/Native/NativeContentView.swift`.
-/// Each SwiftUI host gets a fresh `GADNativeAdView` (sharing one across
+/// Each SwiftUI host gets a fresh `NativeAdView` (sharing one across
 /// hosts breaks UIKit's "one superview per view" invariant). Asset binding
 /// — especially `nativeAdView.mediaView?.mediaContent = …` and the final
 /// `nativeAdView.nativeAd = …` registration — is deferred to ``update(_:)``
 /// so it runs after SwiftUI has placed the view in its window. That timing
-/// matters: `GADMediaView` lazily resolves its image based on the
+/// matters: `MediaView` lazily resolves its image based on the
 /// registered subview's frame, and frames are zero before the host attaches.
 @MainActor
 final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
-    private let nativeAd: GADNativeAd
+    private let nativeAd: NativeAd
     private let delegateBridge: AdMobNativeAdDelegateBridge
     private let style: AdMobNativeStyle
     private let layout: AdMobNativeLayout
@@ -42,7 +42,7 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
     }
 
     init(
-        nativeAd: GADNativeAd,
+        nativeAd: NativeAd,
         delegateBridge: AdMobNativeAdDelegateBridge,
         style: AdMobNativeStyle = .default,
         layout: AdMobNativeLayout = .compactHorizontal
@@ -54,7 +54,7 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
     }
 
     func makeView() -> AnyObject {
-        let nativeAdView = GADNativeAdView()
+        let nativeAdView = NativeAdView()
         nativeAdView.translatesAutoresizingMaskIntoConstraints = false
         nativeAdView.backgroundColor = style.cardBackground ?? .secondarySystemBackground
         nativeAdView.layer.cornerRadius = style.cornerRadius ?? 12
@@ -84,9 +84,9 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
     /// NativeContentView.swift` uses — text and `mediaContent` first, then
     /// `nativeAd =` last. Assigning `nativeAd` is the registration step:
     /// it arms click & impression tracking AND tells the registered
-    /// `GADMediaView` to render the `mediaContent` we just put on it.
+    /// `MediaView` to render the `mediaContent` we just put on it.
     func update(_ view: AnyObject) {
-        guard let nativeAdView = view as? GADNativeAdView else { return }
+        guard let nativeAdView = view as? NativeAdView else { return }
 
         (nativeAdView.headlineView as? UILabel)?.text = nativeAd.headline
         nativeAdView.mediaView?.mediaContent = nativeAd.mediaContent
@@ -109,10 +109,10 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
     ///
     /// Google's native examples keep app icon and media separate. The public
     /// AdMob test native creative mostly advertises Google Ads itself, so
-    /// using `GADMediaView` as a chat thumbnail makes the Google Ads logo
+    /// using `MediaView` as a chat thumbnail makes the Google Ads logo
     /// appear as oversized "media." Compact chat rows use `iconView`; the
     /// media asset remains available in `heroCard`.
-    private func buildCompactHorizontalChrome(in nativeAdView: GADNativeAdView) {
+    private func buildCompactHorizontalChrome(in nativeAdView: NativeAdView) {
         let sponsoredLabel = makeSponsoredLabel()
         let adChoicesView = makeAdChoicesView()
         let iconView = makeIconView()
@@ -170,7 +170,7 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
     /// pattern (`width = aspectRatio * height`). When `aspectRatio` is
     /// reported as 0 (e.g. a creative without media metadata), we fall
     /// back to 1.0 so the constraint stays well-formed.
-    private func buildHeroCardChrome(in nativeAdView: GADNativeAdView) {
+    private func buildHeroCardChrome(in nativeAdView: NativeAdView) {
         let sponsoredLabel = makeSponsoredLabel()
         let adChoicesView = makeAdChoicesView()
         let mediaView = makeMediaView()
@@ -236,14 +236,14 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
         return label
     }
 
-    private func makeAdChoicesView() -> GADAdChoicesView {
-        let view = GADAdChoicesView()
+    private func makeAdChoicesView() -> AdChoicesView {
+        let view = AdChoicesView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }
 
-    private func makeMediaView() -> GADMediaView {
-        let view = GADMediaView()
+    private func makeMediaView() -> MediaView {
+        let view = MediaView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.contentMode = .scaleAspectFill
         view.clipsToBounds = true
@@ -264,7 +264,7 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
         return view
     }
 
-    /// Place registered asset views as direct subviews of `GADNativeAdView`.
+    /// Place registered asset views as direct subviews of `NativeAdView`.
     /// AdMob's native-ad validator flags assets that aren't direct children
     /// as "Advertiser assets outside native ad view," even when the frames
     /// are mathematically inside the native ad view's bounds.

@@ -1,7 +1,7 @@
 #if canImport(UIKit)
 import UIKit
 
-/// Visual overrides applied to the ``GADNativeAdView`` that
+/// Visual overrides applied to the ``NativeAdView`` that
 /// ``AdMobNativeAdRenderer`` builds for AdMob native fills.
 ///
 /// Mirrors the UIKit-flavored subset of ``EloAdStyle`` so the host can
@@ -11,7 +11,7 @@ import UIKit
 ///
 /// ```swift
 /// AdMobNetworkAdapter(
-///     priceTiers: tiers,
+///     adUnitId: "ca-app-pub-.../main",
 ///     rootViewController: rootVC,
 ///     nativeAdStyle: AdMobNativeStyle(
 ///         cardBackground: UIColor(named: "AdCardBackground"),
