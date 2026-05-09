@@ -13,11 +13,14 @@ import EloAdsMediationAdMob
 Elo.configure(
     with: EloConfiguration(
         elo: EloNetworkConfiguration(
-            publisherId: "YOUR_PUBLISHER_ID",
-            adUnitId: "YOUR_AD_UNIT_ID"
+            // From the Elo dashboard — identifies your Elo demand integration.
+            publisherId: "YOUR_ELO_PUBLISHER_ID",
+            adUnitId: "YOUR_ELO_AD_UNIT_ID"
         ),
         adapters: [
-            AdMobNetworkAdapter(adUnitId: "ca-app-pub-…/…"),
+            // From the AdMob console — identifies the AdMob ad unit you want
+            // bidding into the auction. Distinct from the Elo adUnitId above.
+            AdMobNetworkAdapter(adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY"),
         ]
     )
 )
@@ -33,4 +36,8 @@ instructions when AdMob publishes new IDs.
 ## Consent forwarding
 
 `AdMobConsent` derives the AdMob `npa` (non-personalized ads) parameter
-from the per-request `AdConsent`. No global CMP state is read.
+from the per-request `AdConsent`, and additionally inspects
+`IABTCF_PurposeConsents` in `UserDefaults.standard` (the IAB TCF v2
+storage key your CMP writes) to honour withdrawn purpose-1/3/4
+consent. If you don't use a TCF-compliant CMP, only the per-request
+`AdConsent` value is consulted.

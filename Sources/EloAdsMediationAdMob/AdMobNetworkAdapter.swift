@@ -10,11 +10,12 @@ import GoogleMobileAds
 /// ```swift
 /// Elo.configure(with: EloConfiguration(
 ///     elo: EloNetworkConfiguration(
-///         publisherId: "YOUR_GROWL_PUB",
-///         adUnitId: "YOUR_GROWL_AD_UNIT"
+///         publisherId: "YOUR_ELO_PUBLISHER_ID",  // from the Elo dashboard
+///         adUnitId: "YOUR_ELO_AD_UNIT_ID"        // from the Elo dashboard
 ///     ),
 ///     adapters: [
-///         AdMobNetworkAdapter(adUnitId: "ca-app-pub-.../main"),
+///         // adUnitId here is the AdMob ad unit, not the Elo one.
+///         AdMobNetworkAdapter(adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY"),
 ///     ]
 /// ))
 /// ```
