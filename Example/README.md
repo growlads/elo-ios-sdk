@@ -21,7 +21,7 @@ Pick an iPhone simulator and press ▶. Tap **Load ad** to fire a request and re
 
 ## Adding mediation
 
-This example demonstrates Elo-direct demand only. To wire mediation adapters (AdMob, AppLovin, etc.), add the [`elo-ios-mediation`](https://github.com/growlads/elo-ios-mediation) package as a dependency and use the long-form `Growl.configure(with: GrowlConfiguration(...))` initializer to register adapters.
+This example demonstrates Elo-direct demand only. To wire mediation adapters (AdMob, AppLovin, etc.), add the `GrowlAdsMediationAdMob` product (ships from this same SwiftPM package as of v0.0.8) to your target and use the long-form `Growl.configure(with: GrowlConfiguration(...))` initializer to register adapters. Per-adapter setup is documented in [`Sources/GrowlAdsMediationAdMob/README.md`](../Sources/GrowlAdsMediationAdMob/README.md).
 
 ## How `GrowlAds` is resolved
 
