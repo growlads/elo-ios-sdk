@@ -101,31 +101,30 @@ struct ChatView: View {
 
 ## Mediation (optional)
 
-Elo runs a parallel first-price auction across its own demand and any mediation adapters you register. Adapters are extra dependencies — add only the networks you actually want bidding.
+Elo runs a parallel first-price auction across its own demand and any mediation adapters you register. Adapters are opt-in: each one is a separate library product on this same package, so you only link the networks you actually want bidding.
 
 ### Available adapters
 
-| Network | Module | Source | Status |
-|---------|--------|--------|--------|
-| AdMob | `GrowlAdsMediationAdMob` | [`elo-ios-mediation`](https://github.com/growlads/elo-ios-mediation) | First-party |
+| Network | Product | Status |
+|---------|---------|--------|
+| AdMob | `GrowlAdsMediationAdMob` | First-party |
 
-Adapters live in [`growlads/elo-ios-mediation`](https://github.com/growlads/elo-ios-mediation), a separate Swift package, so you only pull in heavy third-party SDKs when you actually want them. The release cadence is independent of the core SDK.
+> Heads up: the AdMob adapter used to live in a separate `elo-ios-mediation` package. As of this release it ships from the same SwiftPM package as the core SDK — drop the second `.package(url:)` line and add `GrowlAdsMediationAdMob` to your target dependencies.
 
 ### Wiring it up
 
-Add the mediation package alongside this one and switch from `Growl.initialize` to `Growl.configure(with:)` so you can pass an `adapters` list:
+Add the `GrowlAdsMediationAdMob` product to your target and switch from `Growl.initialize` to `Growl.configure(with:)` so you can pass an `adapters` list:
 
 ```swift
 dependencies: [
     .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.0.1"),
-    .package(url: "https://github.com/growlads/elo-ios-mediation", from: "0.0.1"),
 ],
 targets: [
     .target(
         name: "YourApp",
         dependencies: [
             .product(name: "GrowlAds", package: "elo-ios-sdk"),
-            .product(name: "GrowlAdsMediationAdMob", package: "elo-ios-mediation"),
+            .product(name: "GrowlAdsMediationAdMob", package: "elo-ios-sdk"),
         ]
     ),
 ]
@@ -148,7 +147,7 @@ Growl.configure(
 
 Render, click, and impression telemetry are unchanged — adapter creatives surface through the same `GrowlAdView` / `GrowlBadgeAdView` / `GrowlChatAdView` components.
 
-Per-adapter setup (manifest keys, price tiers, consent forwarding) and the v1 contract for writing your own adapter live in [`elo-ios-mediation`](https://github.com/growlads/elo-ios-mediation) — start with its [README](https://github.com/growlads/elo-ios-mediation#readme) and the [`ADAPTER_AUTHOR_GUIDE.md`](https://github.com/growlads/elo-ios-mediation/blob/main/ADAPTER_AUTHOR_GUIDE.md).
+Per-adapter setup (manifest keys, price tiers, consent forwarding) lives in [`Sources/GrowlAdsMediationAdMob/README.md`](Sources/GrowlAdsMediationAdMob/README.md). The v1 contract for writing your own adapter is documented in [`ADAPTER_AUTHOR_GUIDE.md`](https://github.com/growlads/elo-ios-sdk-source/blob/main/ADAPTER_AUTHOR_GUIDE.md) in the source repo.
 
 ## Example
 

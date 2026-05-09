@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in the Elo iOS SDK. This repository is the **distribution** for the SDK — the XCFramework binary and the generated `Package.swift`. Mediation adapters (e.g. AdMob) ship from the separate [`growlads/elo-ios-mediation`](https://github.com/growlads/elo-ios-mediation) package. The SDK itself is developed in a separate (private) source repository, so the kinds of changes accepted here are narrow.
+Thanks for your interest in the Elo iOS SDK. This repository is the **distribution** for the SDK — the XCFramework binary, the generated `Package.swift`, and the source for first-party mediation adapters (`Sources/GrowlAdsMediationAdMob/`). The SDK core is developed in a separate (private) source repository, so the kinds of changes accepted here are narrow.
 
 ## Reporting bugs
 
