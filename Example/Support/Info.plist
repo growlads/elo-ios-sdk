@@ -18,6 +18,15 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<!--
+	  GoogleMobileAds 13.x requires GADApplicationIdentifier or it calls
+	  abort() on first init. The value below is Google's documented sample
+	  test ID and is safe to ship in a public demo. Replace with your real
+	  AdMob app ID (ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY from the AdMob
+	  console) before serving real fills.
+	-->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
