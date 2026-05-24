@@ -1,6 +1,10 @@
 # Changelog
 
-All notable changes to the Elo iOS SDK distribution are documented here. The XCFramework binary is published to GitHub Releases; this file tracks what each tagged release contains.
+## Unreleased
+
+## 0.1.2 — 2026-05-24
+
+- refactor(ios): move native ad presentation to EloAdView (#13)
 
 ## Unreleased
 

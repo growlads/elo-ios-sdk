@@ -15,9 +15,10 @@ quarter, or whenever a new mediated network is added).
    array. The bundled file's root must be the `<array>` of `<dict>`s — no
    surrounding `SKAdNetworkItems` key, since we ship it as a standalone
    resource that the parser reads directly.
-4. Run the package tests:
+4. Run the AdMob adapter tests against an iOS Simulator (`swift test` does
+   not work — the `GoogleMobileAds` dep is iOS-only):
    ```sh
-   swift test --filter AdMobNetworkAdapterTests
+   ./scripts/test.sh -only-testing:EloAdsMediationAdMobTests
    ```
    The SKAN coverage test asserts the parsed list contains
    `cstr6suwn9.skadnetwork` and has more than 30 entries.
