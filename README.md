@@ -18,13 +18,13 @@ In Xcode: **File → Add Package Dependencies**, then enter:
 https://github.com/growlads/elo-ios-sdk
 ```
 
-Pick **Up to Next Major Version** from `0.0.1`, and add the `EloAds` library to your target.
+Pick **Up to Next Major Version** from `0.1.1`, and add the `EloAds` library to your target.
 
 Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.0.1"),
+    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.1.1"),
 ]
 ```
 
@@ -37,7 +37,8 @@ dependencies: [
 ),
 ```
 
-`import EloAds` is the entire SDK surface.
+`import EloAds` is the core SDK surface. If you also want AdMob mediation,
+link the `EloAdsMediationAdMob` product as shown below.
 
 ## Quick start
 
@@ -56,8 +57,12 @@ let messages: [ChatMessage] = [
     ChatMessage(role: .assistant, content: "Here are some top picks..."),
 ]
 
+let contextObjects = [
+    ContextObject(type: "screen", description: "Running shoe recommendations"),
+]
+
 // 3. Ask for an ad. `loadAd` is non-throwing and returns an exhaustive enum.
-let result = await Elo.loadAd(messages: messages)
+let result = await Elo.loadAd(messages: messages, contextObjects: contextObjects)
 
 switch result {
 case .loaded(let ad):
@@ -99,9 +104,22 @@ struct ChatView: View {
 }
 ```
 
+`EloAdView` automatically tracks render, click, and impression events.
+Impressions are counted after the ad is at least 50% visible for 1 second.
+For localized surfaces, pass static labels:
+
+```swift
+EloAdView(
+    result: adResult,
+    sponsoredLabel: NSLocalizedString("ad.sponsored", comment: ""),
+    openLinkAccessibilityLabel: NSLocalizedString("ad.open_link", comment: "")
+)
+```
+
 ## Mediation (optional)
 
-> **Available from v0.0.8.** Earlier releases don't ship the `EloAdsMediationAdMob` product yet, so the snippets below won't resolve until you bump the SDK pin to v0.0.8.
+> **Available from v0.1.1.** Earlier releases don't include the current
+> `EloAdsMediationAdMob` API shown below.
 
 Elo runs a parallel first-price auction across its own demand and any mediation adapters you register. Adapters are opt-in: each one is a separate library product on this same package, so you only link the networks you actually want bidding.
 
@@ -117,7 +135,7 @@ Add the `EloAdsMediationAdMob` product to your target and switch from `Elo.initi
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.0.8"),
+    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.1.1"),
 ],
 targets: [
     .target(
@@ -141,16 +159,26 @@ Elo.configure(
             adUnitId: "YOUR_AD_UNIT_ID"
         ),
         adapters: [
-            // Replace `priceTiers` and ad-unit IDs with values from your AdMob dashboard.
-            AdMobNetworkAdapter(priceTiers: [/* AdMobPriceTier(...) */])
+            AdMobNetworkAdapter(
+                adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY",
+                // GoogleMobileAds doesn't expose a programmatic bid price,
+                // so pass your realized eCPM from AdMob reporting.
+                expectedEcpm: 2.40,
+                sponsoredLabel: "Sponsored"
+            )
         ]
     )
 )
 ```
 
-Render, click, and impression telemetry are unchanged — adapter creatives surface through the same `EloAdView` / `EloBadgeAdView` / `EloChatAdView` components.
+Set `expectedEcpm` to `0.0` to make AdMob last-resort backfill. When AdMob ties
+the Elo first-party lane at `0.0`, Elo wins the tie; AdMob only wins when no Elo
+bid is available and no other adapter outbids `0.0`.
 
-Per-adapter setup (manifest keys, price tiers, consent forwarding) lives in [`Sources/EloAdsMediationAdMob/README.md`](Sources/EloAdsMediationAdMob/README.md). Writing a third-party adapter against the v1 contract isn't documented publicly yet — open an issue and tag a maintainer if that's what you're after.
+Render, click, and impression telemetry are unchanged — adapter creatives
+surface through the same `EloAdView` component.
+
+Per-adapter setup (manifest keys, expected eCPM, consent forwarding) lives in [`Sources/EloAdsMediationAdMob/README.md`](Sources/EloAdsMediationAdMob/README.md). Writing a third-party adapter against the v1 contract isn't documented publicly yet — open an issue and tag a maintainer if that's what you're after.
 
 ## Example
 

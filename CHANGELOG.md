@@ -4,11 +4,16 @@
 
 ## 0.1.1 — 2026-05-24
 
-- refactor(ios): trim EloConfiguration to Android parity (#12)
-- docs(mediation): fix AdMob adapter doc nits flagged on dist PR #14 (#10)
-- docs(ios): pin README SwiftPM snippets at exact 0.1.0 (#9)
+Align the iOS SDK with the Android configuration surface and ship the updated
+AdMob native-ad renderer.
 
-## Unreleased
+- Simplified `EloConfiguration` around publisher/ad-unit identity, privacy
+  flags, log level, and optional mediation adapters.
+- Replaced legacy ad view variants with the single SwiftUI `EloAdView` surface.
+- Added AdMob `expectedEcpm` bidding, compact native layout updates, localized
+  sponsor labels, and no-CTA rendering.
+- Standardized impression tracking at 50% visible for 1 second.
+- Updated README snippets for the `0.1.1` package and current AdMob API.
 
 ## 0.1.0 — 2026-05-09
 

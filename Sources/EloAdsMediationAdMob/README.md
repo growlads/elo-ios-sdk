@@ -26,7 +26,8 @@ Elo.configure(
                 // GoogleMobileAds doesn't expose a programmatic price, so
                 // pass your realized eCPM from the AdMob dashboard. Must
                 // be finite and `>= 0.0`. Set to `0.0` to configure AdMob
-                // as last-resort backfill behind the Elo first-party lane.
+                // as last-resort backfill: when AdMob ties Elo at `0.0`,
+                // Elo wins the tie.
                 expectedEcpm: 2.40,
                 // Optional. Attribution badge rendered above each AdMob
                 // creative. Defaults to "Sponsored"; pass a localized
