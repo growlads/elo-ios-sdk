@@ -20,11 +20,34 @@ Elo.configure(
         adapters: [
             // From the AdMob console — identifies the AdMob ad unit you want
             // bidding into the auction. Distinct from the Elo adUnitId above.
-            AdMobNetworkAdapter(adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY"),
+            AdMobNetworkAdapter(
+                adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY",
+                // Required. The bid the adapter reports when AdMob fills —
+                // GoogleMobileAds doesn't expose a programmatic price, so
+                // pass your realized eCPM from the AdMob dashboard. Must
+                // be finite and `>= 0.0`. Set to `0.0` to configure AdMob
+                // as last-resort backfill: when AdMob ties Elo at `0.0`,
+                // Elo wins the tie.
+                expectedEcpm: 2.40
+            ),
         ]
     )
 )
 ```
+
+Presentation is controlled by `EloAdView`, not the adapter:
+
+```swift
+EloAdView(
+    result: result,
+    sponsoredLabel: NSLocalizedString("ad.sponsored", comment: ""),
+    openLinkAccessibilityLabel: NSLocalizedString("ad.open_link", comment: ""),
+    layout: .compactHorizontal
+)
+```
+
+Apply `.eloAdStyle(...)` and `.eloAdLayout(...)` in SwiftUI to keep
+Elo-direct and AdMob-rendered cards visually consistent.
 
 ## Resources
 

@@ -2,315 +2,238 @@ import Foundation
 import EloAds
 
 #if canImport(GoogleMobileAds) && canImport(UIKit)
+import SwiftUI
 import UIKit
 @preconcurrency import GoogleMobileAds
 
-/// Builds a `NativeAdView` for an AdMob native fill in one of several
-/// visual treatments selected via ``AdMobNativeLayout``.
-///
-/// All layouts share the same chrome scaffolding: rounded card background,
-/// "📢 Sponsored" badge, `AdChoicesView` in the top-right corner, and the
-/// asset slots (`iconView`/`mediaView`, `headlineView`, `bodyView`) registered
-/// against `NativeAdView` so AdMob's tracking sees them as direct children. The
-/// per-layout `build*Chrome` method only differs in where the assets live
-/// and what their constraints are.
-///
-/// Why two-phase rendering (`makeView` builds chrome, `update` binds data):
-///
-/// Mirrors AdMob's official `SwiftUIDemo/Native/NativeContentView.swift`.
-/// Each SwiftUI host gets a fresh `NativeAdView` (sharing one across
-/// hosts breaks UIKit's "one superview per view" invariant). Asset binding
-/// — especially `nativeAdView.mediaView?.mediaContent = …` and the final
-/// `nativeAdView.nativeAd = …` registration — is deferred to ``update(_:)``
-/// so it runs after SwiftUI has placed the view in its window. That timing
-/// matters: `MediaView` lazily resolves its image based on the
-/// registered subview's frame, and frames are zero before the host attaches.
+/// Renders an AdMob native fill inside the SDK's SwiftUI `EloAdView` surface
+/// while keeping AdMob's required `NativeAdView` asset ownership intact.
 @MainActor
 final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
     private let nativeAd: NativeAd
     private let delegateBridge: AdMobNativeAdDelegateBridge
-    private let style: AdMobNativeStyle
-    private let layout: AdMobNativeLayout
 
     var minimumDisplayHeight: CGFloat {
-        switch layout {
-        case .compactHorizontal:
-            return 128
-        case .heroCard:
-            return 300
-        }
+        minimumDisplayHeight(configuration: .init())
     }
 
     init(
         nativeAd: NativeAd,
-        delegateBridge: AdMobNativeAdDelegateBridge,
-        style: AdMobNativeStyle = .default,
-        layout: AdMobNativeLayout = .compactHorizontal
+        delegateBridge: AdMobNativeAdDelegateBridge
     ) {
         self.nativeAd = nativeAd
         self.delegateBridge = delegateBridge
-        self.style = style
-        self.layout = layout
     }
 
     func makeView() -> AnyObject {
-        let nativeAdView = NativeAdView()
-        nativeAdView.translatesAutoresizingMaskIntoConstraints = false
-        nativeAdView.backgroundColor = style.cardBackground ?? .secondarySystemBackground
-        nativeAdView.layer.cornerRadius = style.cornerRadius ?? 12
-        nativeAdView.layer.cornerCurve = .continuous
-        nativeAdView.clipsToBounds = true
-        if let borderColor = style.borderColor, let borderWidth = style.borderWidth {
-            nativeAdView.layer.borderColor = borderColor.cgColor
-            nativeAdView.layer.borderWidth = borderWidth
+        makeView(configuration: .init())
+    }
+
+    func minimumDisplayHeight(configuration: EloAdRenderConfiguration) -> CGFloat {
+        switch configuration.layout {
+        case .compactHorizontal: return 116
+        case .heroCard:          return 240
         }
+    }
+
+    func makeView(configuration: EloAdRenderConfiguration) -> AnyObject {
+        let host = AdMobNativeHostView(
+            configuration: configuration
+        )
+        nativeAd.delegate = delegateBridge
+        host.bind(nativeAd: nativeAd)
+        return host
+    }
+
+    func update(_ view: AnyObject) {
+        guard let host = view as? AdMobNativeHostView else { return }
+        host.bind(nativeAd: nativeAd)
+    }
+}
+
+@MainActor
+final class AdMobNativeHostView: NativeAdView {
+    private let layout: EloAdLayout
+    private let sponsoredLabelView = UILabel()
+    private let headlineLabel = UILabel()
+    private let bodyLabel = UILabel()
+    private let mediaAssetView = MediaView()
+    private let iconAssetView = UIImageView()
+    private let assetContainer = UIView()
+    private let textStack = UIStackView()
+    private let contentStack = UIStackView()
+    private let rootStack = UIStackView()
+
+    init(
+        configuration: EloAdRenderConfiguration
+    ) {
+        self.layout = configuration.layout
+        super.init(frame: .zero)
+
+        configureContainer(style: configuration.style)
+        accessibilityHint = configuration.openLinkAccessibilityLabel
+        configureSponsoredLabel(configuration.sponsoredLabel)
+        configureAssetViews()
+        configureTextLabels(style: configuration.style)
+        configureLayout(layout: configuration.layout)
+        registerVisibleAssetViews()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("AdMobNativeHostView is created programmatically")
+    }
+
+    func bind(nativeAd: NativeAd) {
+        headlineLabel.text = nativeAd.headline
+        headlineLabel.isHidden = nativeAd.headline?.isEmpty ?? true
+
+        bodyLabel.text = nativeAd.body
+        bodyLabel.isHidden = nativeAd.body?.isEmpty ?? true
 
         switch layout {
         case .compactHorizontal:
-            buildCompactHorizontalChrome(in: nativeAdView)
+            iconAssetView.image = nativeAd.icon?.image ?? nativeAd.images?.first?.image
+            iconAssetView.isHidden = false
+            mediaAssetView.isHidden = true
+            mediaView = nil
+            iconView = iconAssetView
         case .heroCard:
-            buildHeroCardChrome(in: nativeAdView)
+            mediaAssetView.mediaContent = nativeAd.mediaContent
+            mediaAssetView.isHidden = false
+            iconAssetView.isHidden = true
+            mediaView = mediaAssetView
+            iconView = nil
         }
 
-        // Set the delegate now (idempotent across multiple makeView calls)
-        // so the impression callback that fires on view-attachment isn't
-        // missed by the time `nativeAd =` runs in `update(_:)`.
-        nativeAd.delegate = delegateBridge
-
-        return nativeAdView
+        callToActionView = nil
+        self.nativeAd = nativeAd
     }
 
-    /// Bind ad assets in the exact order Google's `SwiftUIDemo/Native/
-    /// NativeContentView.swift` uses — text and `mediaContent` first, then
-    /// `nativeAd =` last. Assigning `nativeAd` is the registration step:
-    /// it arms click & impression tracking AND tells the registered
-    /// `MediaView` to render the `mediaContent` we just put on it.
-    func update(_ view: AnyObject) {
-        guard let nativeAdView = view as? NativeAdView else { return }
-
-        (nativeAdView.headlineView as? UILabel)?.text = nativeAd.headline
-        nativeAdView.mediaView?.mediaContent = nativeAd.mediaContent
-        if let iconView = nativeAdView.iconView as? UIImageView {
-            iconView.image = nativeAd.icon?.image
-            iconView.isHidden = nativeAd.icon == nil
-        }
-        if let bodyLabel = nativeAdView.bodyView as? UILabel {
-            bodyLabel.text = nativeAd.body
-            bodyLabel.isHidden = (nativeAd.body?.isEmpty ?? true)
-        }
-
-        // Required to make the ad clickable. Must be the final binding step.
-        nativeAdView.nativeAd = nativeAd
+    private func configureContainer(style: EloAdStyle) {
+        backgroundColor = Self.uiColor(style.cardBackground, fallback: .systemBackground)
+        layer.cornerRadius = style.cornerRadius ?? 12
+        layer.cornerCurve = .continuous
+        clipsToBounds = true
+        layer.borderColor = Self.uiColor(style.borderColor, fallback: .separator).cgColor
+        layer.borderWidth = style.borderWidth ?? 1
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.08
+        layer.shadowRadius = 4
+        layer.shadowOffset = CGSize(width: 0, height: 2)
     }
 
-    // MARK: - Layout: compactHorizontal
+    private func configureSponsoredLabel(_ text: String) {
+        sponsoredLabelView.text = text.uppercased()
+        sponsoredLabelView.font = .systemFont(ofSize: 11, weight: .semibold)
+        sponsoredLabelView.textAlignment = .left
+        sponsoredLabelView.textColor = .secondaryLabel
+        sponsoredLabelView.backgroundColor = .clear
+        sponsoredLabelView.numberOfLines = 1
+        sponsoredLabelView.setContentCompressionResistancePriority(.required, for: .vertical)
+        sponsoredLabelView.translatesAutoresizingMaskIntoConstraints = false
+    }
 
-    /// Compact chat row: app icon leading, headline + body trailing.
-    ///
-    /// Google's native examples keep app icon and media separate. The public
-    /// AdMob test native creative mostly advertises Google Ads itself, so
-    /// using `MediaView` as a chat thumbnail makes the Google Ads logo
-    /// appear as oversized "media." Compact chat rows use `iconView`; the
-    /// media asset remains available in `heroCard`.
-    private func buildCompactHorizontalChrome(in nativeAdView: NativeAdView) {
-        let sponsoredLabel = makeSponsoredLabel()
-        let adChoicesView = makeAdChoicesView()
-        let iconView = makeIconView()
-        let headlineLabel = makeHeadlineLabel(font: .systemFont(ofSize: 16, weight: .semibold))
-        let bodyLabel = makeBodyLabel(font: .systemFont(ofSize: 13))
+    private func configureAssetViews() {
+        assetContainer.translatesAutoresizingMaskIntoConstraints = false
+        assetContainer.clipsToBounds = true
+        assetContainer.layer.cornerRadius = 10
+        assetContainer.layer.cornerCurve = .continuous
+        assetContainer.backgroundColor = .secondarySystemBackground
+        assetContainer.layer.borderColor = UIColor.separator.cgColor
+        assetContainer.layer.borderWidth = 1
 
-        nativeAdView.addSubview(sponsoredLabel)
-        nativeAdView.addSubview(adChoicesView)
-        nativeAdView.addSubview(iconView)
-        nativeAdView.addSubview(headlineLabel)
-        nativeAdView.addSubview(bodyLabel)
-        nativeAdView.adChoicesView = adChoicesView
-        nativeAdView.iconView = iconView
-        nativeAdView.headlineView = headlineLabel
-        nativeAdView.bodyView = bodyLabel
+        mediaAssetView.translatesAutoresizingMaskIntoConstraints = false
+        mediaAssetView.backgroundColor = .tertiarySystemBackground
+        mediaAssetView.contentMode = .scaleAspectFill
 
+        iconAssetView.translatesAutoresizingMaskIntoConstraints = false
+        iconAssetView.backgroundColor = .tertiarySystemBackground
+        iconAssetView.contentMode = .scaleAspectFill
+        iconAssetView.clipsToBounds = true
+
+        assetContainer.addSubview(mediaAssetView)
+        assetContainer.addSubview(iconAssetView)
         NSLayoutConstraint.activate([
-            sponsoredLabel.topAnchor.constraint(equalTo: nativeAdView.topAnchor, constant: 12),
-            sponsoredLabel.leadingAnchor.constraint(equalTo: nativeAdView.leadingAnchor, constant: 12),
-            sponsoredLabel.trailingAnchor.constraint(lessThanOrEqualTo: adChoicesView.leadingAnchor, constant: -8),
+            mediaAssetView.topAnchor.constraint(equalTo: assetContainer.topAnchor),
+            mediaAssetView.leadingAnchor.constraint(equalTo: assetContainer.leadingAnchor),
+            mediaAssetView.trailingAnchor.constraint(equalTo: assetContainer.trailingAnchor),
+            mediaAssetView.bottomAnchor.constraint(equalTo: assetContainer.bottomAnchor),
 
-            adChoicesView.topAnchor.constraint(equalTo: nativeAdView.topAnchor, constant: 8),
-            adChoicesView.trailingAnchor.constraint(equalTo: nativeAdView.trailingAnchor, constant: -8),
-            adChoicesView.widthAnchor.constraint(equalToConstant: 15),
-            adChoicesView.heightAnchor.constraint(equalToConstant: 15),
-
-            iconView.topAnchor.constraint(equalTo: sponsoredLabel.bottomAnchor, constant: 8),
-            iconView.leadingAnchor.constraint(equalTo: nativeAdView.leadingAnchor, constant: 12),
-            iconView.widthAnchor.constraint(equalToConstant: 80),
-            iconView.heightAnchor.constraint(equalToConstant: 80),
-            iconView.bottomAnchor.constraint(lessThanOrEqualTo: nativeAdView.bottomAnchor, constant: -12),
-
-            headlineLabel.topAnchor.constraint(equalTo: iconView.topAnchor),
-            headlineLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
-            headlineLabel.trailingAnchor.constraint(equalTo: nativeAdView.trailingAnchor, constant: -12),
-
-            bodyLabel.topAnchor.constraint(equalTo: headlineLabel.bottomAnchor, constant: 4),
-            bodyLabel.leadingAnchor.constraint(equalTo: headlineLabel.leadingAnchor),
-            bodyLabel.trailingAnchor.constraint(equalTo: headlineLabel.trailingAnchor),
-            bodyLabel.bottomAnchor.constraint(lessThanOrEqualTo: nativeAdView.bottomAnchor, constant: -12),
+            iconAssetView.topAnchor.constraint(equalTo: assetContainer.topAnchor),
+            iconAssetView.leadingAnchor.constraint(equalTo: assetContainer.leadingAnchor),
+            iconAssetView.trailingAnchor.constraint(equalTo: assetContainer.trailingAnchor),
+            iconAssetView.bottomAnchor.constraint(equalTo: assetContainer.bottomAnchor),
         ])
+    }
 
-        // Yield to the trailing constraint before expanding text width.
+    private func configureTextLabels(style: EloAdStyle) {
+        headlineLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        headlineLabel.textColor = Self.uiColor(style.titleColor, fallback: .label)
+        headlineLabel.numberOfLines = 2
+        headlineLabel.lineBreakMode = .byTruncatingTail
         headlineLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        headlineLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        bodyLabel.font = .systemFont(ofSize: 14)
+        bodyLabel.textColor = Self.uiColor(style.descriptionColor, fallback: .secondaryLabel)
+        bodyLabel.numberOfLines = 2
+        bodyLabel.lineBreakMode = .byTruncatingTail
         bodyLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
-    // MARK: - Layout: heroCard
+    private func configureLayout(layout: EloAdLayout) {
+        textStack.axis = .vertical
+        textStack.alignment = .fill
+        textStack.spacing = 5
+        textStack.addArrangedSubview(headlineLabel)
+        textStack.addArrangedSubview(bodyLabel)
+        textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-    /// MediaView spans the full card width with height driven by the
-    /// creative's `mediaContent.aspectRatio`; headline and body stack
-    /// vertically below.
-    ///
-    /// The aspect-ratio constraint mirrors AdMob's documented native-ad
-    /// pattern (`width = aspectRatio * height`). When `aspectRatio` is
-    /// reported as 0 (e.g. a creative without media metadata), we fall
-    /// back to 1.0 so the constraint stays well-formed.
-    private func buildHeroCardChrome(in nativeAdView: NativeAdView) {
-        let sponsoredLabel = makeSponsoredLabel()
-        let adChoicesView = makeAdChoicesView()
-        let mediaView = makeMediaView()
-        let headlineLabel = makeHeadlineLabel(font: .systemFont(ofSize: 17, weight: .semibold))
-        let bodyLabel = makeBodyLabel(font: .systemFont(ofSize: 14))
+        contentStack.axis = layout == .compactHorizontal ? .horizontal : .vertical
+        contentStack.alignment = .top
+        contentStack.spacing = 14
+        contentStack.distribution = .fill
+        contentStack.addArrangedSubview(assetContainer)
+        contentStack.addArrangedSubview(textStack)
 
-        nativeAdView.addSubview(sponsoredLabel)
-        nativeAdView.addSubview(adChoicesView)
-        nativeAdView.addSubview(mediaView)
-        nativeAdView.addSubview(headlineLabel)
-        nativeAdView.addSubview(bodyLabel)
-        nativeAdView.adChoicesView = adChoicesView
-        nativeAdView.mediaView = mediaView
-        nativeAdView.headlineView = headlineLabel
-        nativeAdView.bodyView = bodyLabel
+        rootStack.axis = .vertical
+        rootStack.alignment = .fill
+        rootStack.spacing = 8
+        rootStack.translatesAutoresizingMaskIntoConstraints = false
+        rootStack.addArrangedSubview(sponsoredLabelView)
+        rootStack.addArrangedSubview(contentStack)
+        addSubview(rootStack)
 
-        let aspectRatio = nativeAd.mediaContent.aspectRatio > 0
-            ? CGFloat(nativeAd.mediaContent.aspectRatio)
-            : 1.0
-        let mediaAspectConstraint = NSLayoutConstraint(
-            item: mediaView, attribute: .width, relatedBy: .equal,
-            toItem: mediaView, attribute: .height,
-            multiplier: aspectRatio, constant: 0
-        )
+        let assetSize: CGFloat = layout == .compactHorizontal ? 72 : 160
+        let constraints = [
+            rootStack.topAnchor.constraint(equalTo: topAnchor, constant: 14),
+            rootStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            rootStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
+            rootStack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -14),
 
-        NSLayoutConstraint.activate([
-            sponsoredLabel.topAnchor.constraint(equalTo: nativeAdView.topAnchor, constant: 12),
-            sponsoredLabel.leadingAnchor.constraint(equalTo: nativeAdView.leadingAnchor, constant: 12),
-            sponsoredLabel.trailingAnchor.constraint(lessThanOrEqualTo: adChoicesView.leadingAnchor, constant: -8),
+            assetContainer.widthAnchor.constraint(equalToConstant: assetSize),
+            assetContainer.heightAnchor.constraint(equalToConstant: assetSize),
+        ]
 
-            adChoicesView.topAnchor.constraint(equalTo: nativeAdView.topAnchor, constant: 8),
-            adChoicesView.trailingAnchor.constraint(equalTo: nativeAdView.trailingAnchor, constant: -8),
-            adChoicesView.widthAnchor.constraint(equalToConstant: 15),
-            adChoicesView.heightAnchor.constraint(equalToConstant: 15),
+        NSLayoutConstraint.activate(constraints)
 
-            mediaView.topAnchor.constraint(equalTo: sponsoredLabel.bottomAnchor, constant: 8),
-            mediaView.leadingAnchor.constraint(equalTo: nativeAdView.leadingAnchor, constant: 12),
-            mediaView.trailingAnchor.constraint(equalTo: nativeAdView.trailingAnchor, constant: -12),
-            mediaAspectConstraint,
-
-            headlineLabel.topAnchor.constraint(equalTo: mediaView.bottomAnchor, constant: 12),
-            headlineLabel.leadingAnchor.constraint(equalTo: nativeAdView.leadingAnchor, constant: 12),
-            headlineLabel.trailingAnchor.constraint(equalTo: nativeAdView.trailingAnchor, constant: -12),
-
-            bodyLabel.topAnchor.constraint(equalTo: headlineLabel.bottomAnchor, constant: 6),
-            bodyLabel.leadingAnchor.constraint(equalTo: headlineLabel.leadingAnchor),
-            bodyLabel.trailingAnchor.constraint(equalTo: headlineLabel.trailingAnchor),
-            bodyLabel.bottomAnchor.constraint(equalTo: nativeAdView.bottomAnchor, constant: -12),
-        ])
-
-        headlineLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        bodyLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-    }
-
-    // MARK: - Shared subview factories
-
-    private func makeSponsoredLabel() -> UILabel {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "📢 Sponsored"
-        label.font = .preferredFont(forTextStyle: .caption2)
-        label.textColor = style.badgeColor ?? .secondaryLabel
-        return label
-    }
-
-    private func makeAdChoicesView() -> AdChoicesView {
-        let view = AdChoicesView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }
-
-    private func makeMediaView() -> MediaView {
-        let view = MediaView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.contentMode = .scaleAspectFill
-        view.clipsToBounds = true
-        view.layer.cornerRadius = 8
-        view.layer.cornerCurve = .continuous
-        view.backgroundColor = .tertiarySystemBackground
-        return view
-    }
-
-    private func makeIconView() -> UIImageView {
-        let view = UIImageView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.contentMode = .scaleAspectFit
-        view.clipsToBounds = true
-        view.layer.cornerRadius = 8
-        view.layer.cornerCurve = .continuous
-        view.backgroundColor = .tertiarySystemBackground
-        return view
-    }
-
-    /// Place registered asset views as direct subviews of `NativeAdView`.
-    /// AdMob's native-ad validator flags assets that aren't direct children
-    /// as "Advertiser assets outside native ad view," even when the frames
-    /// are mathematically inside the native ad view's bounds.
-    ///
-    /// `WrappingLabel` re-computes its intrinsic content size once the
-    /// frame width is known — a free-standing `UILabel` with
-    /// `numberOfLines = 0` reports its intrinsic size against the full
-    /// unwrapped text and never rewraps inside auto-layout.
-    private func makeHeadlineLabel(font: UIFont) -> WrappingLabel {
-        let label = WrappingLabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = font
-        label.numberOfLines = 0
-        label.lineBreakMode = .byWordWrapping
-        label.textColor = style.titleColor ?? .label
-        return label
-    }
-
-    private func makeBodyLabel(font: UIFont) -> WrappingLabel {
-        let label = WrappingLabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = font
-        label.numberOfLines = 0
-        label.lineBreakMode = .byWordWrapping
-        label.textColor = style.descriptionColor ?? .secondaryLabel
-        return label
-    }
-}
-
-/// UILabel that keeps `preferredMaxLayoutWidth` in sync with its own frame.
-///
-/// A plain UILabel with `numberOfLines = 0` reports its intrinsic size
-/// against the unwrapped text (single line) because `preferredMaxLayoutWidth`
-/// defaults to `0`. Auto-layout then squeezes the label, but the label's
-/// internal drawing doesn't re-wrap — the rendered text spills past the
-/// frame, and AdMob's native-ad validator flags the result as
-/// "Advertiser assets outside native ad view." Syncing the property in
-/// `layoutSubviews` forces the second layout pass to compute wrap height
-/// against the actual frame width.
-private final class WrappingLabel: UILabel {
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        if preferredMaxLayoutWidth != bounds.width {
-            preferredMaxLayoutWidth = bounds.width
-            setNeedsUpdateConstraints()
+        if layout == .heroCard {
+            assetContainer.widthAnchor.constraint(equalTo: contentStack.widthAnchor).isActive = true
         }
     }
+
+    private func registerVisibleAssetViews() {
+        headlineView = headlineLabel
+        bodyView = bodyLabel
+        callToActionView = nil
+    }
+
+    private static func uiColor(_ color: Color?, fallback: UIColor) -> UIColor {
+        guard let color else { return fallback }
+        return UIColor(color)
+    }
 }
+
 #endif

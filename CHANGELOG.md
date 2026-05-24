@@ -1,8 +1,15 @@
 # Changelog
 
-All notable changes to the Elo iOS SDK distribution are documented here. The XCFramework binary is published to GitHub Releases; this file tracks what each tagged release contains.
-
 ## Unreleased
+
+## 0.1.2 — 2026-05-24
+
+Move native ad presentation control to `EloAdView` so Elo-direct and AdMob-rendered cards share the same SwiftUI styling path.
+
+- Added view-level `EloAdLayout`, `.eloAdLayout(...)`, and renderer configuration propagation.
+- Removed AdMob adapter initializer presentation knobs; `AdMobNetworkAdapter` now only handles network configuration.
+- Deprecated `AdMobNativeStyle` and `AdMobNativeLayout` in favor of `EloAdStyle` and `EloAdLayout`.
+- Rebuilt renderer-backed native views when layout/style/label configuration changes on an already-mounted `EloAdView`.
 
 ## 0.1.0 — 2026-05-09
 

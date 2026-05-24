@@ -1,25 +1,12 @@
 #if canImport(UIKit)
 import UIKit
 
-/// Visual overrides applied to the ``NativeAdView`` that
-/// ``AdMobNativeAdRenderer`` builds for AdMob native fills.
+/// Deprecated UIKit-style overrides for AdMob native fills.
 ///
-/// Mirrors the UIKit-flavored subset of ``EloAdStyle`` so the host can
-/// keep the AdMob-rendered card visually consistent with Elo-direct
-/// cards. Only non-nil fields are applied; everything else falls back to
-/// system colors.
-///
-/// ```swift
-/// AdMobNetworkAdapter(
-///     adUnitId: "ca-app-pub-.../main",
-///     rootViewController: rootVC,
-///     nativeAdStyle: AdMobNativeStyle(
-///         cardBackground: UIColor(named: "AdCardBackground"),
-///         titleColor: .label,
-///         cornerRadius: 16
-///     )
-/// )
-/// ```
+/// Presentation now lives on ``EloAdView``. Apply ``EloAdStyle`` with
+/// `.eloAdStyle(...)` so Elo-direct and renderer-backed AdMob fills share
+/// the same styling path.
+@available(*, deprecated, message: "Use EloAdStyle on EloAdView via .eloAdStyle(...).")
 public struct AdMobNativeStyle: @unchecked Sendable {
     public var cardBackground: UIColor?
     public var titleColor: UIColor?
