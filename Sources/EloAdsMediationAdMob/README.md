@@ -20,7 +20,19 @@ Elo.configure(
         adapters: [
             // From the AdMob console — identifies the AdMob ad unit you want
             // bidding into the auction. Distinct from the Elo adUnitId above.
-            AdMobNetworkAdapter(adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY"),
+            AdMobNetworkAdapter(
+                adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY",
+                // Required. The bid the adapter reports when AdMob fills —
+                // GoogleMobileAds doesn't expose a programmatic price, so
+                // pass your realized eCPM from the AdMob dashboard. Must
+                // be finite and `>= 0.0`. Set to `0.0` to configure AdMob
+                // as last-resort backfill behind the Elo first-party lane.
+                expectedEcpm: 2.40,
+                // Optional. Attribution badge rendered above each AdMob
+                // creative. Defaults to "Sponsored"; pass a localized
+                // string for non-English surfaces.
+                sponsoredLabel: "Sponsored"
+            ),
         ]
     )
 )

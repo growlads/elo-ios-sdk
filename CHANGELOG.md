@@ -1,6 +1,12 @@
 # Changelog
 
-All notable changes to the Elo iOS SDK distribution are documented here. The XCFramework binary is published to GitHub Releases; this file tracks what each tagged release contains.
+## Unreleased
+
+## 0.1.1 — 2026-05-24
+
+- refactor(ios): trim EloConfiguration to Android parity (#12)
+- docs(mediation): fix AdMob adapter doc nits flagged on dist PR #14 (#10)
+- docs(ios): pin README SwiftPM snippets at exact 0.1.0 (#9)
 
 ## Unreleased
 

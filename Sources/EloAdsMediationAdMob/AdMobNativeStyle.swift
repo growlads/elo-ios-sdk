@@ -12,6 +12,7 @@ import UIKit
 /// ```swift
 /// AdMobNetworkAdapter(
 ///     adUnitId: "ca-app-pub-.../main",
+///     expectedEcpm: 2.40,
 ///     rootViewController: rootVC,
 ///     nativeAdStyle: AdMobNativeStyle(
 ///         cardBackground: UIColor(named: "AdCardBackground"),

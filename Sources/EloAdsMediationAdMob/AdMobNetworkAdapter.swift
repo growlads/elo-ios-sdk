@@ -15,7 +15,10 @@ import GoogleMobileAds
 ///     ),
 ///     adapters: [
 ///         // adUnitId here is the AdMob ad unit, not the Elo one.
-///         AdMobNetworkAdapter(adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY"),
+///         AdMobNetworkAdapter(
+///             adUnitId: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYYYY",
+///             expectedEcpm: 2.40 // your realized eCPM from AdMob reports
+///         ),
 ///     ]
 /// ))
 /// ```
@@ -28,10 +31,6 @@ import GoogleMobileAds
 /// `NativeAdView` for impressions and clicks to count. The adapter always
 /// attaches an ``AdMobNativeAdRenderer`` to the returned ``EloAd`` so
 /// ``EloAdView`` embeds an AdMob-owned layout and the ad is billable.
-/// `EloBadgeAdView` and `EloChatAdView` are Elo-styled variants that
-/// ignore the renderer — they are not safe surfaces for AdMob creatives.
-/// Branch on ``EloAd/requiresCustomRendering`` to choose which surfaces to
-/// show for a given bid.
 public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked Sendable {
     public let networkId = "admob"
 
@@ -51,19 +50,25 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
     private let rootViewControllerProvider: @MainActor @Sendable () -> UIViewController?
     private let nativeAdStyle: AdMobNativeStyle
     private let nativeAdLayout: AdMobNativeLayout
-
-    /// Default eCPM reported when an AdMob native fill wins the auction.
-    /// `NativeAd` does not expose a programmatic bid price, and publishers
-    /// no longer configure tier floors at the public API surface; the SDK
-    /// reports a single placeholder bid so AdMob participates as a fallback.
-    /// Tune via internal experimentation, not publisher config.
-    static let defaultECpm: Double = 1.0
+    private let sponsoredLabel: String
 
     /// - Parameters:
     ///   - adUnitId: AdMob native ad unit id, e.g.
     ///     `"ca-app-pub-3940256099942544/3986624511"`. The adapter loads this
-    ///     unit on every bid; if the host publisher wants tier-based price
-    ///     flooring, configure it AdMob-side on a single mediation ad unit.
+    ///     unit on every bid.
+    ///   - expectedEcpm: The bid value the adapter reports when AdMob fills.
+    ///     `GoogleMobileAds.NativeAd` does not expose a programmatic bid
+    ///     price, so this number is what Elo's first-price auction uses to
+    ///     compare AdMob against other networks. Set it to your realized
+    ///     eCPM for this ad unit as observed in your AdMob dashboard (a
+    ///     blended last-30-day figure is a reasonable starting point). Must
+    ///     be finite and `>= 0.0` (rejects `nan` and `infinity`). Zero
+    ///     configures AdMob as last-resort backfill: when AdMob ties the
+    ///     Elo first-party lane at `0.0`, the mediator's tie-break prefers
+    ///     Elo, so AdMob only wins when no Elo bid is available and no
+    ///     other adapter outbids `0.0`. Immutable for the life of the
+    ///     adapter instance; to change it, construct a new adapter and
+    ///     re-run ``Elo/configure(with:)``.
     ///   - rootViewController: Closure returning the view controller AdMob
     ///     should anchor its ad loading to. Use `nil` only if you know the
     ///     ad format doesn't need one.
@@ -75,22 +80,39 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
     ///   - nativeAdLayout: Visual treatment of the AdMob native card.
     ///     Defaults to ``AdMobNativeLayout/compactHorizontal``. Use
     ///     ``AdMobNativeLayout/heroCard`` for slot-sized surfaces.
+    ///   - sponsoredLabel: Attribution badge rendered above each AdMob
+    ///     creative. Defaults to `"Sponsored"`; pass a localized string for
+    ///     non-English markets (e.g. `"Werbung"`, `"広告"`). Mirrors the
+    ///     Android adapter's `sponsoredLabel` parameter.
     public init(
         adUnitId: String,
+        expectedEcpm: Double,
         rootViewController: @escaping @MainActor @Sendable () -> UIViewController? = { nil },
         nativeAdStyle: AdMobNativeStyle = .default,
-        nativeAdLayout: AdMobNativeLayout = .compactHorizontal
+        nativeAdLayout: AdMobNativeLayout = .compactHorizontal,
+        sponsoredLabel: String = "Sponsored"
     ) {
         precondition(!adUnitId.isEmpty, "AdMobNetworkAdapter requires a non-empty adUnitId")
-        self.priceTiers = [AdMobPriceTier(adUnitId: adUnitId, eCpm: Self.defaultECpm)]
+        precondition(
+            expectedEcpm.isFinite && expectedEcpm >= 0.0,
+            "AdMobNetworkAdapter requires a finite expectedEcpm >= 0.0; got \(expectedEcpm)"
+        )
+        self.priceTiers = [AdMobPriceTier(adUnitId: adUnitId, eCpm: expectedEcpm)]
         self.rootViewControllerProvider = rootViewController
         self.nativeAdStyle = nativeAdStyle
         self.nativeAdLayout = nativeAdLayout
+        self.sponsoredLabel = sponsoredLabel
         super.init()
     }
 
-    public func start() async throws {
+    public func start(consent: AdConsent) async throws {
         try await startGoogleMobileAds()
+        // Apply the startup-time consent snapshot to AdMob's global
+        // RequestConfiguration so the very first auction inherits COPPA /
+        // under-age flags. Per-request consent is also applied in
+        // `loadNativeAd`, but Google's SDK reads COPPA at init time on some
+        // surfaces — mirror Android's behavior of seeding it here.
+        Self.applyConsent(consent, requestConfiguration: MobileAds.shared.requestConfiguration)
     }
 
     public func bid(_ request: AdBidRequest) async throws -> AdBid? {
@@ -101,7 +123,12 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
                 guard let nativeAd = try await loadNativeAd(adUnitId: adUnitId, request: request) else {
                     return nil
                 }
-                return await Self.makeCreative(from: nativeAd, style: nativeAdStyle, layout: nativeAdLayout)
+                return await Self.makeCreative(
+                    from: nativeAd,
+                    style: nativeAdStyle,
+                    layout: nativeAdLayout,
+                    sponsoredLabel: sponsoredLabel
+                )
             }
         )
     }
@@ -161,28 +188,27 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
     /// ``AdMobCreativeMapper/makeCreative(from:tracker:renderer:)``:
     ///
     ///   1. Append the CTA to title: `"\(headline) — \(callToAction)"`.
-    ///   2. Prefer icon for `EloBadgeAdView` contexts (compact format).
-    ///   3. Fall back to advertiser name when body is empty.
+    ///   2. Fall back to advertiser name when body is empty.
     ///
     /// Return `nil` to reject the creative (the bid becomes a no-fill).
     @MainActor
     static func makeCreative(
         from nativeAd: NativeAd,
         style: AdMobNativeStyle = .default,
-        layout: AdMobNativeLayout = .compactHorizontal
+        layout: AdMobNativeLayout = .compactHorizontal,
+        sponsoredLabel: String = "Sponsored"
     ) -> EloAd? {
         // Always attach a renderer. AdMob counts impressions and clicks only
         // when the creative is displayed inside a `NativeAdView`;
         // ``EloAdView`` detects the renderer and embeds the AdMob-owned
-        // layout. Badge and chat variants remain Elo-styled and are not
-        // safe surfaces for AdMob — gate them on
-        // ``EloAd/requiresCustomRendering`` in host code.
+        // layout.
         let delegateBridge = AdMobNativeAdDelegateBridge()
         let renderer = AdMobNativeAdRenderer(
             nativeAd: nativeAd,
             delegateBridge: delegateBridge,
             style: style,
-            layout: layout
+            layout: layout,
+            sponsoredLabel: sponsoredLabel
         )
         let ad = AdMobCreativeMapper.makeCreative(
             from: AdMobNativeAssets(
