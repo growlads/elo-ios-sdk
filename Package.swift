@@ -6,21 +6,17 @@
 
 import PackageDescription
 
-let strictConcurrency: [SwiftSetting] = [
-    .enableExperimentalFeature("StrictConcurrency"),
-]
-
 let package = Package(
     name: "EloAds",
     platforms: [
         .iOS(.v16),
     ],
     products: [
-        // The SDK. `import EloAds` is everything.
         .library(name: "EloAds", targets: ["EloAds"]),
-        // Opt-in AdMob mediation adapter. Pulls in GoogleMobileAds; consumers
-        // that don't need AdMob can skip this product entirely.
-        .library(name: "EloAdsMediationAdMob", targets: ["EloAdsMediationAdMob"]),
+        .library(
+            name: "EloAdsMediationAdMob",
+            targets: ["EloAdsMediationAdMob", "EloAdsMediationAdMobDependencies"]
+        ),
     ],
     dependencies: [
         .package(
@@ -32,21 +28,24 @@ let package = Package(
         .binaryTarget(
             name: "EloAds",
             url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.1.3/EloAds.xcframework.zip",
-            checksum: "29f5149d13e3b9e0979a8c2975685fae125312d4bab5ae1a8058e6d8c24278d8"
+            checksum: "de96231da8595620c04ffdc5ff184847f763846899fd81cd637449adc8f55b6f"
+        ),
+        .binaryTarget(
+            name: "EloAdsMediationAdMob",
+            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.1.3/EloAdsMediationAdMob.xcframework.zip",
+            checksum: "e54dd1d14d3671dc4a2689ad5db26c68a953053997c772fda29da2dd6054375a"
         ),
         .target(
-            name: "EloAdsMediationAdMob",
+            name: "EloAdsMediationAdMobDependencies",
             dependencies: [
                 "EloAds",
+                "EloAdsMediationAdMob",
                 .product(
                     name: "GoogleMobileAds",
                     package: "swift-package-manager-google-mobile-ads"
                 ),
             ],
-            path: "Sources/EloAdsMediationAdMob",
-            exclude: ["README.md", "Resources/UPDATING.md"],
-            resources: [.process("Resources/AdMobSKAdNetworkItems.plist")],
-            swiftSettings: strictConcurrency
+            path: "Sources/EloAdsMediationAdMobDependencies"
         ),
     ]
 )
