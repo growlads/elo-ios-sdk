@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.3 — 2026-05-31
+
+- chore(ios): bump SDK version to 0.1.3 (#15)
+- fix(ios): tag dist releases from generated package branch (#14)
+
 ## 0.1.2 — 2026-05-24
 
 Move native ad presentation control to `EloAdView` so Elo-direct and

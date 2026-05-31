@@ -37,7 +37,7 @@ final class AdMobNativeAdDelegateBridge: NSObject, NativeAdDelegate, @unchecked 
     func attach(ad: EloAd) {
         lock.lock()
         defer { lock.unlock() }
-        attachedAd = ad
+        attachedAd = ad.withoutRenderer()
     }
 
     func nativeAdDidRecordImpression(_ nativeAd: NativeAd) {
@@ -54,6 +54,19 @@ final class AdMobNativeAdDelegateBridge: NSObject, NativeAdDelegate, @unchecked 
         lock.lock()
         defer { lock.unlock() }
         return attachedAd
+    }
+}
+
+private extension EloAd {
+    func withoutRenderer() -> EloAd {
+        EloAd(
+            id: id,
+            title: title,
+            description: description,
+            imageUrl: imageUrl,
+            clickUrl: clickUrl,
+            tracker: tracker
+        )
     }
 }
 #endif

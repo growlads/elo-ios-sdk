@@ -41,6 +41,7 @@ Presentation is controlled by `EloAdView`, not the adapter:
 EloAdView(
     result: result,
     sponsoredLabel: NSLocalizedString("ad.sponsored", comment: ""),
+    callToActionLabel: NSLocalizedString("ad.learn_more", comment: ""),
     openLinkAccessibilityLabel: NSLocalizedString("ad.open_link", comment: ""),
     layout: .compactHorizontal
 )

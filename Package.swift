@@ -31,8 +31,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "EloAds",
-            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.1.2/EloAds.xcframework.zip",
-            checksum: "1a11f295ecca795a4eb0955ccd2db487e2fbb7dba23c377034e4d878fcb2c717"
+            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.1.3/EloAds.xcframework.zip",
+            checksum: "29f5149d13e3b9e0979a8c2975685fae125312d4bab5ae1a8058e6d8c24278d8"
         ),
         .target(
             name: "EloAdsMediationAdMob",
