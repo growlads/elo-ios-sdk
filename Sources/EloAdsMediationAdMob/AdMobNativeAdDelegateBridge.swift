@@ -34,10 +34,10 @@ final class AdMobNativeAdDelegateBridge: NSObject, NativeAdDelegate, @unchecked 
     /// ``AdMobNetworkAdapter/makeCreative(from:)`` after the creative is built;
     /// the bridge stays inert until then so AdMob callbacks that arrive before
     /// the ad is fully attached are dropped rather than passed an empty value.
-    func attach(ad: EloAd) {
+    func attach(ad: EloAd, tracker: some AdTracker) {
         lock.lock()
         defer { lock.unlock() }
-        attachedAd = ad
+        attachedAd = ad.withoutRenderer(tracker: tracker)
     }
 
     func nativeAdDidRecordImpression(_ nativeAd: NativeAd) {
@@ -54,6 +54,19 @@ final class AdMobNativeAdDelegateBridge: NSObject, NativeAdDelegate, @unchecked 
         lock.lock()
         defer { lock.unlock() }
         return attachedAd
+    }
+}
+
+private extension EloAd {
+    func withoutRenderer(tracker: some AdTracker) -> EloAd {
+        EloAd(
+            id: id,
+            title: title,
+            description: description,
+            imageUrl: imageUrl,
+            clickUrl: clickUrl,
+            tracker: tracker
+        )
     }
 }
 #endif

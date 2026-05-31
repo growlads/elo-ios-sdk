@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.1.4 — 2026-05-31
+
+- fix(ios): fix AdMob bridge for binary package release; bump to 0.1.4
+
 ## 0.1.2 — 2026-05-24
 
 Move native ad presentation control to `EloAdView` so Elo-direct and

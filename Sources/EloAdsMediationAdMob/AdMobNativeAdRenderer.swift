@@ -31,7 +31,7 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
 
     func minimumDisplayHeight(configuration: EloAdRenderConfiguration) -> CGFloat {
         switch configuration.layout {
-        case .compactHorizontal: return 116
+        case .compactHorizontal: return 112
         case .heroCard:          return 240
         }
     }
@@ -41,7 +41,6 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
             configuration: configuration
         )
         nativeAd.delegate = delegateBridge
-        host.bind(nativeAd: nativeAd)
         return host
     }
 
@@ -53,10 +52,28 @@ final class AdMobNativeAdRenderer: AdRenderer, @unchecked Sendable {
 
 @MainActor
 final class AdMobNativeHostView: NativeAdView {
+    private enum Metrics {
+        static let cardPadding: CGFloat = 12
+        static let verticalSpacing: CGFloat = 10
+        static let contentSpacing: CGFloat = 12
+        static let textSpacing: CGFloat = 4
+        static let compactAssetSize: CGFloat = 56
+        static let heroAssetHeight: CGFloat = 160
+        static let callToActionMinWidth: CGFloat = 88
+        static let callToActionHeight: CGFloat = 44
+        static let callToActionHorizontalPadding: CGFloat = 14
+        static let adChoicesSize: CGFloat = 24
+        static let cardCornerRadius: CGFloat = 12
+        static let assetCornerRadius: CGFloat = 6
+        static let sponsoredKern: CGFloat = 0.8
+    }
+
     private let layout: EloAdLayout
     private let sponsoredLabelView = UILabel()
     private let headlineLabel = UILabel()
     private let bodyLabel = UILabel()
+    private let callToActionButton = PaddedButton(type: .system)
+    private let adChoicesAssetView = AdChoicesView()
     private let mediaAssetView = MediaView()
     private let iconAssetView = UIImageView()
     private let assetContainer = UIView()
@@ -72,9 +89,10 @@ final class AdMobNativeHostView: NativeAdView {
 
         configureContainer(style: configuration.style)
         accessibilityHint = configuration.openLinkAccessibilityLabel
-        configureSponsoredLabel(configuration.sponsoredLabel)
+        configureSponsoredLabel(configuration.sponsoredLabel, style: configuration.style)
         configureAssetViews()
         configureTextLabels(style: configuration.style)
+        configureCallToActionButton(style: configuration.style)
         configureLayout(layout: configuration.layout)
         registerVisibleAssetViews()
     }
@@ -90,6 +108,10 @@ final class AdMobNativeHostView: NativeAdView {
 
         bodyLabel.text = nativeAd.body
         bodyLabel.isHidden = nativeAd.body?.isEmpty ?? true
+        let callToAction = nativeAd.callToAction?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasCallToAction = !(callToAction?.isEmpty ?? true)
+        callToActionButton.setTitle(callToAction, for: .normal)
+        callToActionButton.isHidden = !hasCallToAction
 
         switch layout {
         case .compactHorizontal:
@@ -106,28 +128,33 @@ final class AdMobNativeHostView: NativeAdView {
             iconView = nil
         }
 
-        callToActionView = nil
+        callToActionView = hasCallToAction ? callToActionButton : nil
+        adChoicesView = adChoicesAssetView
         self.nativeAd = nativeAd
+        bringSubviewToFront(adChoicesAssetView)
     }
 
     private func configureContainer(style: EloAdStyle) {
-        backgroundColor = Self.uiColor(style.cardBackground, fallback: .systemBackground)
-        layer.cornerRadius = style.cornerRadius ?? 12
+        backgroundColor = Self.uiColor(style.cardBackground, fallback: .secondarySystemBackground)
+        layer.cornerRadius = style.cornerRadius ?? Metrics.cardCornerRadius
         layer.cornerCurve = .continuous
         clipsToBounds = true
         layer.borderColor = Self.uiColor(style.borderColor, fallback: .separator).cgColor
         layer.borderWidth = style.borderWidth ?? 1
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.08
-        layer.shadowRadius = 4
-        layer.shadowOffset = CGSize(width: 0, height: 2)
     }
 
-    private func configureSponsoredLabel(_ text: String) {
-        sponsoredLabelView.text = text.uppercased()
-        sponsoredLabelView.font = .systemFont(ofSize: 11, weight: .semibold)
+    private func configureSponsoredLabel(_ text: String, style: EloAdStyle) {
+        let font = UIFont.systemFont(ofSize: 11, weight: .bold)
+        sponsoredLabelView.attributedText = NSAttributedString(
+            string: text,
+            attributes: [
+                .font: font,
+                .kern: Metrics.sponsoredKern,
+            ]
+        )
+        sponsoredLabelView.font = font
         sponsoredLabelView.textAlignment = .left
-        sponsoredLabelView.textColor = .secondaryLabel
+        sponsoredLabelView.textColor = Self.uiColor(style.badgeColor, fallback: .secondaryLabel)
         sponsoredLabelView.backgroundColor = .clear
         sponsoredLabelView.numberOfLines = 1
         sponsoredLabelView.setContentCompressionResistancePriority(.required, for: .vertical)
@@ -137,11 +164,9 @@ final class AdMobNativeHostView: NativeAdView {
     private func configureAssetViews() {
         assetContainer.translatesAutoresizingMaskIntoConstraints = false
         assetContainer.clipsToBounds = true
-        assetContainer.layer.cornerRadius = 10
+        assetContainer.layer.cornerRadius = Metrics.assetCornerRadius
         assetContainer.layer.cornerCurve = .continuous
-        assetContainer.backgroundColor = .secondarySystemBackground
-        assetContainer.layer.borderColor = UIColor.separator.cgColor
-        assetContainer.layer.borderWidth = 1
+        assetContainer.backgroundColor = .tertiarySystemBackground
 
         mediaAssetView.translatesAutoresizingMaskIntoConstraints = false
         mediaAssetView.backgroundColor = .tertiarySystemBackground
@@ -168,9 +193,9 @@ final class AdMobNativeHostView: NativeAdView {
     }
 
     private func configureTextLabels(style: EloAdStyle) {
-        headlineLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        headlineLabel.font = .systemFont(ofSize: 15, weight: .bold)
         headlineLabel.textColor = Self.uiColor(style.titleColor, fallback: .label)
-        headlineLabel.numberOfLines = 2
+        headlineLabel.numberOfLines = 1
         headlineLabel.lineBreakMode = .byTruncatingTail
         headlineLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         headlineLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -182,57 +207,119 @@ final class AdMobNativeHostView: NativeAdView {
         bodyLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
+    private func configureCallToActionButton(style: EloAdStyle) {
+        callToActionButton.horizontalPadding = Metrics.callToActionHorizontalPadding
+        callToActionButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        callToActionButton.titleLabel?.lineBreakMode = .byTruncatingTail
+        callToActionButton.setTitleColor(
+            Self.uiColor(style.callToActionForeground, fallback: .tintColor),
+            for: .normal
+        )
+        callToActionButton.backgroundColor = Self.uiColor(
+            style.callToActionBackground,
+            fallback: UIColor.tintColor.withAlphaComponent(0.18)
+        )
+        callToActionButton.layer.cornerRadius = Metrics.callToActionHeight / 2
+        callToActionButton.layer.cornerCurve = .continuous
+        callToActionButton.isHidden = true
+        callToActionButton.translatesAutoresizingMaskIntoConstraints = false
+        callToActionButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        callToActionButton.setContentHuggingPriority(.required, for: .horizontal)
+        callToActionButton.minimumHeight = Metrics.callToActionHeight
+        NSLayoutConstraint.activate([
+            callToActionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Metrics.callToActionMinWidth),
+            callToActionButton.heightAnchor.constraint(equalToConstant: Metrics.callToActionHeight),
+        ])
+    }
+
     private func configureLayout(layout: EloAdLayout) {
         textStack.axis = .vertical
         textStack.alignment = .fill
-        textStack.spacing = 5
+        textStack.spacing = Metrics.textSpacing
         textStack.addArrangedSubview(headlineLabel)
         textStack.addArrangedSubview(bodyLabel)
         textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         contentStack.axis = layout == .compactHorizontal ? .horizontal : .vertical
-        contentStack.alignment = .top
-        contentStack.spacing = 14
+        contentStack.alignment = layout == .compactHorizontal ? .center : .top
+        contentStack.spacing = Metrics.contentSpacing
         contentStack.distribution = .fill
         contentStack.addArrangedSubview(assetContainer)
         contentStack.addArrangedSubview(textStack)
+        contentStack.addArrangedSubview(callToActionButton)
 
         rootStack.axis = .vertical
         rootStack.alignment = .fill
-        rootStack.spacing = 8
+        rootStack.spacing = Metrics.verticalSpacing
         rootStack.translatesAutoresizingMaskIntoConstraints = false
         rootStack.addArrangedSubview(sponsoredLabelView)
         rootStack.addArrangedSubview(contentStack)
         addSubview(rootStack)
+        adChoicesAssetView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(adChoicesAssetView)
 
-        let assetSize: CGFloat = layout == .compactHorizontal ? 72 : 160
-        let constraints = [
-            rootStack.topAnchor.constraint(equalTo: topAnchor, constant: 14),
-            rootStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
-            rootStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
-            rootStack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -14),
+        var constraints = [
+            rootStack.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.cardPadding),
+            rootStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.cardPadding),
+            rootStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.cardPadding),
+            rootStack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -Metrics.cardPadding),
 
-            assetContainer.widthAnchor.constraint(equalToConstant: assetSize),
-            assetContainer.heightAnchor.constraint(equalToConstant: assetSize),
+            adChoicesAssetView.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            adChoicesAssetView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+            adChoicesAssetView.widthAnchor.constraint(equalToConstant: Metrics.adChoicesSize),
+            adChoicesAssetView.heightAnchor.constraint(equalToConstant: Metrics.adChoicesSize),
         ]
 
-        NSLayoutConstraint.activate(constraints)
-
-        if layout == .heroCard {
-            assetContainer.widthAnchor.constraint(equalTo: contentStack.widthAnchor).isActive = true
+        switch layout {
+        case .compactHorizontal:
+            constraints.append(contentsOf: [
+                assetContainer.widthAnchor.constraint(equalToConstant: Metrics.compactAssetSize),
+                assetContainer.heightAnchor.constraint(equalToConstant: Metrics.compactAssetSize),
+            ])
+        case .heroCard:
+            constraints.append(contentsOf: [
+                assetContainer.widthAnchor.constraint(equalTo: contentStack.widthAnchor),
+                assetContainer.heightAnchor.constraint(equalToConstant: Metrics.heroAssetHeight),
+            ])
         }
+
+        NSLayoutConstraint.activate(constraints)
     }
 
     private func registerVisibleAssetViews() {
         headlineView = headlineLabel
         bodyView = bodyLabel
         callToActionView = nil
+        adChoicesView = adChoicesAssetView
     }
 
     private static func uiColor(_ color: Color?, fallback: UIColor) -> UIColor {
         guard let color else { return fallback }
         return UIColor(color)
+    }
+}
+
+private final class PaddedButton: UIButton {
+    var horizontalPadding: CGFloat = 0 {
+        didSet {
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    var minimumHeight: CGFloat = 0 {
+        didSet {
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let titleSize = titleLabel?.intrinsicContentSize ?? super.intrinsicContentSize
+        let superSize = super.intrinsicContentSize
+        return CGSize(
+            width: titleSize.width + horizontalPadding * 2,
+            height: max(titleSize.height, superSize.height, minimumHeight)
+        )
     }
 }
 

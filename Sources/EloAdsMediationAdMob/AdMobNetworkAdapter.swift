@@ -3,6 +3,9 @@ import EloAds
 
 #if canImport(GoogleMobileAds)
 import GoogleMobileAds
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Google AdMob as an ``AdNetworkAdapter`` for Elo's client-side mediation.
 ///
@@ -46,8 +49,11 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
         AdMobSKAdNetworkIDs.shared
     }
 
-    private let priceTiers: [AdMobPriceTier]
-    private let rootViewControllerProvider: @MainActor @Sendable () -> UIViewController?
+    private let adUnitId: String
+    private let expectedEcpm: Double
+    #if canImport(UIKit)
+    private let rootViewControllerProvider: (@MainActor @Sendable () -> UIViewController?)?
+    #endif
 
     /// - Parameters:
     ///   - adUnitId: AdMob native ad unit id, e.g.
@@ -66,27 +72,61 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
     ///     other adapter outbids `0.0`. Immutable for the life of the
     ///     adapter instance; to change it, construct a new adapter and
     ///     re-run ``Elo/configure(with:)``.
-    ///   - rootViewController: Closure returning the view controller AdMob
-    ///     should anchor its ad loading to. Use `nil` only if you know the
-    ///     ad format doesn't need one.
     ///
     /// Styling, layout, and localized presentation labels are supplied by
     /// ``EloAdView`` through ``EloAdStyle``, ``EloAdLayout``, and
     /// `EloAdView`'s initializer parameters.
     public init(
         adUnitId: String,
-        expectedEcpm: Double,
-        rootViewController: @escaping @MainActor @Sendable () -> UIViewController? = { nil }
+        expectedEcpm: Double
     ) {
+        #if canImport(UIKit)
+        self.rootViewControllerProvider = nil
+        #endif
         precondition(!adUnitId.isEmpty, "AdMobNetworkAdapter requires a non-empty adUnitId")
         precondition(
             expectedEcpm.isFinite && expectedEcpm >= 0.0,
             "AdMobNetworkAdapter requires a finite expectedEcpm >= 0.0; got \(expectedEcpm)"
         )
-        self.priceTiers = [AdMobPriceTier(adUnitId: adUnitId, eCpm: expectedEcpm)]
-        self.rootViewControllerProvider = rootViewController
+        self.adUnitId = adUnitId
+        self.expectedEcpm = expectedEcpm
         super.init()
     }
+
+    #if canImport(UIKit)
+    @available(
+        *,
+        deprecated,
+        message: "AdMobNetworkAdapter now resolves the root view controller automatically. This compatibility overload still honors the provider, but new integrations should use init(adUnitId:expectedEcpm:)."
+    )
+    public convenience init(
+        adUnitId: String,
+        expectedEcpm: Double,
+        rootViewController: @escaping @MainActor @Sendable () -> UIViewController?
+    ) {
+        self.init(
+            adUnitId: adUnitId,
+            expectedEcpm: expectedEcpm,
+            rootViewControllerProvider: rootViewController
+        )
+    }
+
+    private init(
+        adUnitId: String,
+        expectedEcpm: Double,
+        rootViewControllerProvider: (@MainActor @Sendable () -> UIViewController?)?
+    ) {
+        self.rootViewControllerProvider = rootViewControllerProvider
+        precondition(!adUnitId.isEmpty, "AdMobNetworkAdapter requires a non-empty adUnitId")
+        precondition(
+            expectedEcpm.isFinite && expectedEcpm >= 0.0,
+            "AdMobNetworkAdapter requires a finite expectedEcpm >= 0.0; got \(expectedEcpm)"
+        )
+        self.adUnitId = adUnitId
+        self.expectedEcpm = expectedEcpm
+        super.init()
+    }
+    #endif
 
     public func start(consent: AdConsent) async throws {
         try await startGoogleMobileAds()
@@ -99,25 +139,25 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
     }
 
     public func bid(_ request: AdBidRequest) async throws -> AdBid? {
-        try await AdMobWaterfall.firstFill(
-            tiers: priceTiers,
-            timeout: request.timeout,
-            loadAd: { [self] adUnitId in
-                guard let nativeAd = try await loadNativeAd(adUnitId: adUnitId, request: request) else {
-                    return nil
-                }
-                return await Self.makeCreative(
-                    from: nativeAd
-                )
-            }
-        )
+        guard let nativeAd = try await loadNativeAd(adUnitId: adUnitId, request: request),
+              let ad = await Self.makeCreative(from: nativeAd)
+        else {
+            return nil
+        }
+
+        return AdBid(networkId: networkId, eCpm: expectedEcpm, ad: ad)
     }
 
     // MARK: - AdLoader async bridge
 
     private func loadNativeAd(adUnitId: String, request: AdBidRequest) async throws -> NativeAd? {
-        let rootVC = await MainActor.run {
-            rootViewControllerProvider()
+        let rootVC = await MainActor.run { () -> UIViewController? in
+            #if canImport(UIKit)
+            if let rootViewControllerProvider {
+                return rootViewControllerProvider()
+            }
+            #endif
+            return Self.defaultRootViewController()
         }
         Self.applyConsent(request.consent, requestConfiguration: MobileAds.shared.requestConfiguration)
 
@@ -184,6 +224,7 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
             nativeAd: nativeAd,
             delegateBridge: delegateBridge
         )
+        let tracker = AdMobNativeTracker(nativeAd: nativeAd)
         let ad = AdMobCreativeMapper.makeCreative(
             from: AdMobNativeAssets(
                 identifier: stableCreativeId(for: nativeAd),
@@ -191,7 +232,7 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
                 body: nativeAd.body,
                 imageURL: nativeAd.images?.first?.imageURL?.absoluteString
             ),
-            tracker: AdMobNativeTracker(nativeAd: nativeAd),
+            tracker: tracker,
             renderer: renderer
         )
         // Wire the delegate bridge to the freshly-built ad so AdMob's
@@ -199,7 +240,7 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
         // ``EloAdDelegate`` via ``Elo/trackImpression(_:)`` and
         // ``Elo/trackClick(_:)``.
         if let ad {
-            delegateBridge.attach(ad: ad)
+            delegateBridge.attach(ad: ad, tracker: tracker)
         }
         return ad
     }
@@ -233,6 +274,48 @@ public final class AdMobNetworkAdapter: NSObject, AdNetworkAdapter, @unchecked S
         // the Google SDK accepts directly here.
         requestConfiguration.tagForChildDirectedTreatment = NSNumber(value: consent.coppa)
         requestConfiguration.tagForUnderAgeOfConsent = NSNumber(value: consent.tfua)
+    }
+
+    @MainActor
+    private static func defaultRootViewController() -> UIViewController? {
+        #if canImport(UIKit)
+        let foregroundScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first { $0.activationState == .foregroundInactive }
+
+        let window = foregroundScene?.windows.first { $0.isKeyWindow }
+            ?? foregroundScene?.windows.first { !$0.isHidden }
+
+        return topMostViewController(from: window?.rootViewController)
+        #else
+        return nil
+        #endif
+    }
+
+    @MainActor
+    private static func topMostViewController(from rootViewController: UIViewController?) -> UIViewController? {
+        #if canImport(UIKit)
+        if let presentedViewController = rootViewController?.presentedViewController {
+            return topMostViewController(from: presentedViewController)
+        }
+
+        if let navigationController = rootViewController as? UINavigationController {
+            return topMostViewController(
+                from: navigationController.visibleViewController ?? navigationController.topViewController
+            )
+        }
+
+        if let tabBarController = rootViewController as? UITabBarController {
+            return topMostViewController(from: tabBarController.selectedViewController)
+        }
+
+        return rootViewController
+        #else
+        return nil
+        #endif
     }
 
 }
@@ -282,7 +365,7 @@ private final class AdMobNativeAdLoader: NSObject, NativeAdLoaderDelegate, @unch
         // the local `loader` reference would drop before the SDK finishes
         // loading.
         selfRetainer = self
-        let options = NativeAdViewAdOptions()
+        let options = AdMobNativeAdViewOptionsFactory.make()
         let loader = AdLoader(
             adUnitID: adUnitId,
             rootViewController: rootViewController,
@@ -343,6 +426,14 @@ private final class AdMobNativeAdLoader: NSObject, NativeAdLoaderDelegate, @unch
         case .success(let ad): pendingContinuation.resume(returning: ad)
         case .failure(let err): pendingContinuation.resume(throwing: err)
         }
+    }
+}
+
+enum AdMobNativeAdViewOptionsFactory {
+    static func make() -> NativeAdViewAdOptions {
+        let options = NativeAdViewAdOptions()
+        options.preferredAdChoicesPosition = .topRightCorner
+        return options
     }
 }
 
