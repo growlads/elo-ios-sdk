@@ -4,16 +4,9 @@
 
 ## 0.1.3 — 2026-05-31
 
-- fix(ios): create default simulator for package tests
-- fix(ios): ship AdMob mediation as binary artifact
-- fix(ios): fix AdMob bridge for binary package release; bump to 0.1.4
-- chore(ios): bump SDK version to 0.1.3 (#15)
-- fix(ios): tag dist releases from generated package branch (#14)
-
-## 0.1.3 — 2026-05-31
-
-- chore(ios): bump SDK version to 0.1.3 (#15)
-- fix(ios): tag dist releases from generated package branch (#14)
+- Ship `EloAdsMediationAdMob` as a binary XCFramework alongside `EloAds`.
+- Add a linker dependency target so AdMob consumers receive the Google Mobile Ads dependencies through SwiftPM.
+- Keep release tags pointed at the generated SwiftPM package commit.
 
 ## 0.1.2 — 2026-05-24
 
