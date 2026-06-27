@@ -4,8 +4,7 @@
 
 ## 0.1.4 — 2026-06-27
 
-- chore(ios): bump SDK version to 0.1.4 (#20)
-- fix(ios): send OpenRTB device signals (#19)
+EloAds iOS SDK 0.1.4. See the source-repo for full changelog.
 
 ## 0.1.3 — 2026-05-31
 
