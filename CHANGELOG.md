@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.4 — 2026-06-27
+
+- chore(ios): bump SDK version to 0.1.4 (#20)
+- fix(ios): send OpenRTB device signals (#19)
+
 ## 0.1.3 — 2026-05-31
 
 - Ship `EloAdsMediationAdMob` as a binary XCFramework alongside `EloAds`.
