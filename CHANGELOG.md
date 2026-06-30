@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.1.5 — 2026-06-30
+
+- Repair the public SwiftPM release path after the `0.1.3` and `0.1.4`
+  binary assets drifted from the checksums recorded in their package
+  manifests.
+- Harden release publishing so existing GitHub release assets are treated as
+  immutable and verified by downloading them after release creation.
+- Update installation snippets to the current public release version and point
+  iOS documentation links at the canonical `docs.elo.ad` site.
+
+
+
 ## 0.1.4 — 2026-06-27
 
 EloAds iOS SDK 0.1.4. See the source-repo for full changelog.
