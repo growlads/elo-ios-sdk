@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+## 0.1.7 — 2026-07-11
+
+- **`Elo.initialize` is deprecated** and will be removed in 1.0.
+  `Elo.configure` is now the single entry point, in two forms:
+  - `Elo.configure(publisherId:adUnitId:shareGeoLocation:geoLocationPrecision:)` —
+    new convenience for Elo-only integrations; the geo controls keep the
+    on-by-default sharing opt-out visible at the simplest entry point.
+  - `Elo.configure(with: EloConfiguration)` — unchanged; mediation
+    adapters, COPPA/TFUA, `logLevel`, and `baseUrl` live here.
+  Migrating from `initialize` is a rename for most apps; if you passed
+  `coppa:`/`tfua:`, move them onto `EloConfiguration`.
+- `EloError.notConfigured`'s description now points at `Elo.configure(with:)`.
+- **Breaking: `EloAdLayout.heroCard` is removed.** Elo-direct creatives never
+  had a dedicated hero treatment (it silently fell back to
+  `.compactHorizontal`), and the AdMob hero card was the only layout that
+  drew a CTA button. Switch statements over `EloAdLayout` and
+  `.eloAdLayout(.heroCard)` call sites need updating; renderer-backed fills
+  now always use the compact card treatment, so no bundled adapter draws a
+  CTA button anymore.
+- The dist-repo example app is now generated from this repo's sources and
+  compile-checked against the SDK on every release, so it can no longer drift
+  from the published API.
+
+
+
 ## 0.1.6 — 2026-07-11
 
 - **Behavior change for upgraders:** passive geo sharing is now **on by

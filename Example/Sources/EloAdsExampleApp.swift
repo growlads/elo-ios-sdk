@@ -18,10 +18,9 @@ private enum DemoConfig {
 @main
 struct EloAdsExampleApp: App {
     init() {
-        // `Elo.configure(with:)` is the mediation-aware entry point.
-        // For an Elo-only integration you can stick with the shorter
-        // `Elo.initialize(publisherId:adUnitId:)` form; using `configure`
-        // here so the demo also exercises the AdMob mediation adapter.
+        // `Elo.configure(with:)` is the SDK's single entry point; the
+        // `adapters` list below is what opts this demo into AdMob
+        // mediation. Leave it empty for an Elo-only integration.
         Elo.configure(
             with: EloConfiguration(
                 elo: EloNetworkConfiguration(
