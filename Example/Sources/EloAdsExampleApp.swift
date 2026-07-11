@@ -1,13 +1,14 @@
 import SwiftUI
-import UIKit
 import EloAds
 import EloAdsMediationAdMob
 
 // Replace these with your own publisher / ad-unit IDs from the Elo
 // dashboard before shipping. The example will run with the placeholders
-// in place but every Elo-direct request will return `.error(.notConfigured)`
-// until you swap them. The AdMob ad-unit below is Google's documented
-// public test unit and is safe to use unchanged in the demo.
+// in place but Elo-direct requests won't return real fills until you
+// swap them — untouched runs surface as a no-fill / error outcome rather
+// than silently calling out to a stranger's account. The AdMob ad-unit
+// below is Google's documented public test unit and is safe to use
+// unchanged in the demo.
 private enum DemoConfig {
     static let eloPublisherID = "your-publisher-id"
     static let eloAdUnitID    = "your-ad-unit-id"
@@ -30,7 +31,11 @@ struct EloAdsExampleApp: App {
                 adapters: [
                     AdMobNetworkAdapter(
                         adUnitId: DemoConfig.admobTestNativeAdUnitID,
-                        rootViewController: { RootViewControllerFinder.current() }
+                        // GoogleMobileAds native ads don't expose a bid
+                        // price, so Elo's first-price auction compares
+                        // AdMob using this fixed eCPM. Set it to your
+                        // realized AdMob value in production.
+                        expectedEcpm: 1.0
                     ),
                 ]
             )
@@ -99,29 +104,16 @@ struct ContentView: View {
 
     @ViewBuilder
     private func outcomeRow(for result: AdResult) -> some View {
+        // `AdResult` ships in a binary framework, so it can grow cases in
+        // future SDK releases — hence `@unknown default`.
         let (label, color): (String, Color) = switch result {
         case .loaded:           ("Loaded",  .green)
         case .noFill(let r):    ("No fill: \(r)", .orange)
         case .error(let m):     ("Error: \(m)",   .red)
+        @unknown default:       ("Unknown result", .secondary)
         }
         Text(label)
             .font(.footnote.monospaced())
             .foregroundStyle(color)
-    }
-}
-
-// AdMobNetworkAdapter needs a UIViewController to anchor click-handling
-// when an AdMob native creative wins the auction. SwiftUI doesn't expose
-// a stable presenter, so this walks the connected window scenes for the
-// current key window's root controller. Same helper the source-repo
-// example uses.
-private enum RootViewControllerFinder {
-    @MainActor
-    static func current() -> UIViewController? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow)?
-            .rootViewController
     }
 }
