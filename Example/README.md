@@ -1,6 +1,6 @@
 # Elo Example
 
-A SwiftUI iOS app that demonstrates a minimal Elo integration: SDK initialization, a contextual ad request built from a chat snippet, and rendering with `EloAdView`.
+A SwiftUI iOS app that demonstrates a minimal Elo integration with AdMob mediation: SDK configuration, a contextual ad request built from a chat snippet, and rendering with `EloAdView`.
 
 ## Run
 
@@ -10,33 +10,28 @@ open EloAdsExample.xcodeproj
 
 Pick an iPhone simulator and press ▶. Tap **Load ad** to fire a request and render the result.
 
-> **Before it returns real fills:** edit `Sources/EloAdsExampleApp.swift` and replace `eloPublisherID` / `eloAdUnitID` with values from your Elo dashboard. The placeholder strings are deliberately invalid so untouched runs surface as `.error(.notConfigured)` rather than silently calling out to a stranger's account.
+> **Before it returns real fills:** edit `Sources/EloAdsExampleApp.swift` and replace `eloPublisherID` / `eloAdUnitID` with values from your Elo dashboard. The placeholder strings are deliberately invalid so untouched runs surface as a no-fill / error outcome rather than silently calling out to a stranger's account. The AdMob ad-unit is Google's public native test unit and works unchanged.
 
 ## What it does
 
-- Calls `Elo.initialize(publisherId:adUnitId:)` at launch.
-- Sends a small two-message `[ChatMessage]` array as the ad context.
+- Calls `Elo.configure(with:)` at launch, registering the AdMob mediation adapter alongside Elo-direct demand. Adapter setup (app ID, `expectedEcpm`, consent) is documented in the [Mediation section of the root README](../README.md#mediation-optional).
+- Sends a small two-message `[ChatMessage]` array as the ad context via `Elo.loadAd(messages:)`.
 - Hands the resulting `AdResult` to `EloAdView`, which hides itself on no-fill / error and renders the creative on success.
 - Surfaces the raw outcome below the ad slot so the demo stays informative even when there's no fill.
 
-## Adding mediation
-
-This example demonstrates Elo-direct demand only. To wire mediation adapters (AdMob, AppLovin, etc.), add the `EloAdsMediationAdMob` product (ships from this same SwiftPM package as of v0.0.8) to your target and use the long-form `Elo.configure(with: EloConfiguration(...))` initializer to register adapters. Per-adapter setup is documented in [`Sources/EloAdsMediationAdMob/README.md`](../Sources/EloAdsMediationAdMob/README.md).
-
 ## How `EloAds` is resolved
 
-`project.yml` points the SwiftPM `EloAds` package at `path: ..` — i.e. this repo's own `Package.swift`, which declares the binary `EloAds` xcframework target. To demo the tagged-release flow against the live URL instead, swap the `packages:` block to:
+`project.yml` pins the SwiftPM `EloAds` package to this repo's release URL with `exactVersion`. The release workflow keeps the pin in lockstep with each published version, so the demo always builds against the matching release. To build against your local checkout of this repo instead, swap the `packages:` block to:
 
 ```yaml
 packages:
   EloAds:
-    url: https://github.com/growlads/elo-ios-sdk
-    from: "0.0.1"
+    path: ..
 ```
 
 ## Regenerate the Xcode project
 
-If you edit `project.yml`, regenerate `EloAdsExample.xcodeproj` with [XcodeGen](https://github.com/yonaskolb/XcodeGen):
+The checked-in `EloAdsExample.xcodeproj` is generated from `project.yml` by the release workflow. If you edit `project.yml`, regenerate with [XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
 ```sh
 brew install xcodegen

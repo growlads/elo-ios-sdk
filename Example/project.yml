@@ -7,8 +7,10 @@ options:
 # Consumes EloAds via SwiftPM from the public dist-repo, exactly as a
 # real integrator would. Pinned exactly (not `from:`) because the SDK
 # is pre-1.0 — under SemVer's 0.x rule, minor bumps can be breaking, so
-# upToNextMajor would silently pull 0.2.0+ into the demo. Bump `version`
-# when validating a newer release.
+# upToNextMajor would silently pull 0.2.0+ into the demo. The pin is
+# stamped to the released version by the source-repo release workflow
+# ("0.0.0" is the unstamped template placeholder), so the demo always
+# builds against the matching release.
 packages:
   EloAds:
     url: https://github.com/growlads/elo-ios-sdk
