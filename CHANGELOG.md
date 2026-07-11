@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+## 0.1.6 — 2026-07-11
+
+- **Behavior change for upgraders:** passive geo sharing is now **on by
+  default** and configurable directly from `Elo.initialize(...)` via
+  `shareGeoLocation` / `geoLocationPrecision`. Apps whose users already
+  granted location permission start attaching a rounded, coarse location to
+  ad requests after upgrading. The SDK still never requests location
+  permission; it only reads an already-authorized location. Opt out with
+  `shareGeoLocation: false` at init or `Elo.setShareGeoLocation(false)`.
+  See `PRIVACY.md` before shipping.
+- New `.inlineBanner` layout: a two-line strip (thumbnail, "Title · Ad"
+  attribution, one-line description, chevron) for persistent slots anchored
+  to the composer or keyboard.
+- New `.eloKeyboardBannerAd(messages:)` view modifier that pins the inline banner
+  above the keyboard with a single line — no keyboard tracking or layout
+  code in the host app. The slot collapses on no-fill and keeps the current
+  ad on screen while a reload is in flight.
+- Elo-rendered creatives drop the CTA pill: the whole card is tappable and a
+  trailing chevron signals it. `callToActionLabel` now only affects
+  renderer-backed fills that draw their own CTA button.
+- The inline banner's outer margins are excluded from the tap target so the
+  gap next to a composer cannot register accidental ad clicks.
+- Send permission-free `device.geo.country` (locale region mapped to
+  alpha-3, App Store storefront fallback) and `device.geo.utcoffset` on
+  every ad request. Both reflect account/settings, not physical location.
+- Fixed: renderer-backed ads size to their intrinsic height again after a
+  sizing regression left dead space around some creatives.
+- Fixed: preloaded creatives are released on `shutdown` and reconfigure so
+  mediation resources (e.g. AdMob `NativeAd` handles) no longer leak.
+- Fixed: a request-owning `EloAdView` whose slot collapsed after a no-fill
+  could never reload when `messages` changed.
+- Docs: new host-app privacy guide (`PRIVACY.md`) with App Store
+  nutrition-label and consent guidance, README privacy warnings,
+  `MessageRole` mapping guidance for human-to-human chats, and an accuracy
+  pass across the SDK docs.
+
+
+
 ## 0.1.5 — 2026-06-30
 
 - Repair the public SwiftPM release path after the `0.1.3` and `0.1.4`
