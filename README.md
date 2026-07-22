@@ -195,7 +195,12 @@ cd Example
 open EloAdsExample.xcodeproj
 ```
 
-Press ▶ in Xcode (iPhone simulator) and tap **Load ad** to fire a contextual request. Replace the placeholder publisher/ad-unit IDs in `Sources/EloAdsExampleApp.swift` with values from your Elo dashboard before expecting real fills.
+Press ▶ in Xcode (iPhone simulator) and open a chat. Each chat demonstrates one of the two ad formats. Replace the placeholder publisher/ad-unit IDs in `Sources/EloAdsExampleApp.swift` with values from your Elo dashboard before expecting real fills.
+
+| Inline banner | Keyboard banner |
+|---|---|
+| Renders in the message feed. | Pins above the keyboard while the composer is focused. |
+| <img src="Example/Screenshots/inline-banner.png" alt="Inline banner ad rendered in the chat feed" width="280"> | <img src="Example/Screenshots/keyboard-banner.png" alt="Banner ad pinned above the keyboard" width="280"> |
 
 ## Crash reporting
 

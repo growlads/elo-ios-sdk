@@ -48,99 +48,152 @@ struct EloAdsExampleApp: App {
     }
 }
 
-struct ContentView: View {
-    // Two independent conversations, each rendering a contextual ad in one of
-    // the two EloAdLayout formats so the demo shows both side by side. Each
-    // `EloAdView(messages:layout:)` runs its own auction (Elo-direct + AdMob in
-    // parallel) and renders the higher-eCPM creative in the requested layout.
-    private let shoeConversation: [ChatMessage] = [
-        ChatMessage(role: .user, content: "What's the best running shoe for marathon training?"),
-        ChatMessage(role: .assistant, content: "For marathon training, you'll want shoes with good cushioning and durability. Brands like Hoka, Nike, and Brooks are popular picks."),
-    ]
+/// Which ad format a chat demonstrates once you open it.
+private enum AdFormat: Hashable {
+    /// A banner strip rendered inline in the message feed (`.inlineBanner`).
+    case inlineBanner
+    /// A banner pinned above the keyboard while the composer is focused
+    /// (`.eloKeyboardBannerAd(messages:)`).
+    case keyboardBanner
 
-    private let coffeeConversation: [ChatMessage] = [
-        ChatMessage(role: .user, content: "How do I make espresso at home without a fancy machine?"),
-        ChatMessage(role: .assistant, content: "A stovetop Moka pot gets you close for very little money. Use fine ground coffee, medium heat, and pull it off the stove as soon as it starts sputtering."),
-    ]
+    var title: String {
+        switch self {
+        case .inlineBanner:   "Inline banner"
+        case .keyboardBanner: "Keyboard banner"
+        }
+    }
 
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    Text("Two chat threads, one ad each — the top slot uses the compact horizontal card, the bottom slot uses the inline banner.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    // Format 1: compact horizontal card.
-                    AdFormatSection(
-                        format: "compactHorizontal",
-                        messages: shoeConversation,
-                        layout: .compactHorizontal
-                    )
-
-                    Divider()
-
-                    // Format 2: inline banner strip.
-                    AdFormatSection(
-                        format: "inlineBanner",
-                        messages: coffeeConversation,
-                        layout: .inlineBanner
-                    )
-                }
-                .padding()
-            }
-            .navigationTitle("Elo Ads Demo")
+    var blurb: String {
+        switch self {
+        case .inlineBanner:   "Renders in the message feed"
+        case .keyboardBanner: "Pins above the keyboard — tap the composer"
         }
     }
 }
 
-/// One chat thread followed by an ad in a specific layout, plus a small
-/// outcome label so the demo doubles as an integration smoke test.
-private struct AdFormatSection: View {
-    let format: String
+/// A demo conversation plus the ad format it shows.
+private struct Chat: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
     let messages: [ChatMessage]
-    let layout: EloAdLayout
+    let format: AdFormat
 
-    @State private var adResult: AdResult?
+    var preview: String { messages.last?.content ?? "" }
+}
+
+/// Root: a list of chats. Opening one shows its conversation and the ad
+/// format it demonstrates.
+struct ContentView: View {
+    private let chats: [Chat] = [
+        Chat(
+            title: "Marathon training",
+            messages: [
+                ChatMessage(role: .user, content: "What's the best running shoe for marathon training?"),
+                ChatMessage(role: .assistant, content: "For marathon training, you'll want shoes with good cushioning and durability. Brands like Hoka, Nike, and Brooks are popular picks."),
+            ],
+            format: .inlineBanner
+        ),
+        Chat(
+            title: "Home espresso",
+            messages: [
+                ChatMessage(role: .user, content: "How do I make espresso at home without a fancy machine?"),
+                ChatMessage(role: .assistant, content: "A stovetop Moka pot gets you close for very little money. Use fine ground coffee, medium heat, and pull it off the stove as soon as it starts sputtering."),
+            ],
+            format: .keyboardBanner
+        ),
+    ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(format)
-                .font(.footnote.monospaced().bold())
-                .foregroundStyle(.secondary)
-
-            ForEach(messages, id: \.self) { message in
-                ChatBubble(message: message)
+        NavigationStack {
+            List(chats) { chat in
+                NavigationLink(value: chat) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(chat.title).font(.headline)
+                        Text(chat.preview)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        Text(chat.format.title)
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.vertical, 2)
+                }
             }
-
-            // EloAdView loads the ad from the conversation, renders it in the
-            // requested layout, handles impression and click lifecycle events,
-            // and hides itself on `.noFill` / `.error`. Elo-direct clicks still
-            // open the destination while client-side click POST delivery is
-            // temporarily disabled.
-            EloAdView(
-                messages: messages,
-                onResult: { adResult = $0 },
-                layout: layout
-            )
-
-            if let adResult { outcomeRow(for: adResult) }
+            .navigationTitle("Chats")
+            .navigationDestination(for: Chat.self) { chat in
+                ChatDetailView(chat: chat)
+            }
         }
     }
+}
 
-    @ViewBuilder
-    private func outcomeRow(for result: AdResult) -> some View {
-        // `AdResult` ships in a binary framework, so it can grow cases in
-        // future SDK releases — hence `@unknown default`.
-        let (label, color): (String, Color) = switch result {
-        case .loaded:           ("Loaded",  .green)
-        case .noFill(let r):    ("No fill: \(r)", .orange)
-        case .error(let m):     ("Error: \(m)",   .red)
-        @unknown default:       ("Unknown result", .secondary)
+/// A single conversation. Depending on the chat's format it renders either an
+/// inline banner in the feed or a banner pinned above the keyboard.
+private struct ChatDetailView: View {
+    let chat: Chat
+
+    @State private var draft = ""
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(chat.format.blurb)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(chat.messages, id: \.self) { message in
+                        ChatBubble(message: message)
+                    }
+
+                    // Inline banner renders in the feed. The keyboard-banner
+                    // chat shows its ad via the modifier below instead.
+                    if chat.format == .inlineBanner {
+                        EloAdView(messages: chat.messages, layout: .inlineBanner)
+                    }
+                }
+                .padding()
+            }
+
+            composer
         }
-        Text(label)
-            .font(.footnote.monospaced())
-            .foregroundStyle(color)
+        .navigationTitle(chat.title)
+        .navigationBarTitleDisplayMode(.inline)
+        // `.eloKeyboardBannerAd` pins the inline banner above the keyboard with
+        // a single modifier — no keyboard tracking in the host app. It only
+        // appears while the composer is focused, so it's applied to the whole
+        // screen for the keyboard-banner chat.
+        .keyboardBanner(for: chat)
+    }
+
+    private var composer: some View {
+        HStack(spacing: 8) {
+            TextField("Message", text: $draft, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+            Button {
+                draft = ""
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.title2)
+            }
+            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .padding()
+        .background(.bar)
+    }
+}
+
+private extension View {
+    /// Applies the keyboard-banner modifier only for keyboard-banner chats,
+    /// leaving inline-banner chats untouched.
+    @ViewBuilder
+    func keyboardBanner(for chat: Chat) -> some View {
+        if chat.format == .keyboardBanner {
+            self.eloKeyboardBannerAd(messages: chat.messages)
+        } else {
+            self
+        }
     }
 }
 
