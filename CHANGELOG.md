@@ -2,6 +2,102 @@
 
 ## Unreleased
 
+## 0.1.8 — 2026-07-22
+
+- **Fix: `Elo.shutdown()` during an in-flight ad request no longer risks a
+  crash.** The networking client now fails closed with a catchable error
+  instead of creating a URL task on an invalidated session (which threw an
+  uncaught `NSException`). Affects apps that shut the SDK down while a request
+  or its retry is still outstanding.
+
+- **Privacy: diagnostics request-payload capture is now opt-in.**
+  `DiagnosticsEntry.requestPayloadJSON` (surfaced via `Elo.Debug.snapshot()`)
+  is `nil` unless the host app calls the new
+  `Elo.setRequestPayloadCaptureEnabled(true)`. The payload retains the
+  advertising id, geolocation, and consent strings, so it is no longer
+  captured by default — enable it only in development/debug builds. Message
+  content and context descriptions remain redacted as before.
+- **Diagnostics now surface the server ad-opportunity id.**
+  `DiagnosticsEntry` gains a `serverRequestId` field carrying the ad server's
+  `request_id` (the ad-opportunity id) for any operation that reached the ad
+  server, fill or no-fill. It equals the id the backend records for the request,
+  so integrators and test harnesses can correlate a specific ad request to its
+  server-side impression and click events. Retained in memory only; never
+  exported. Nil only for cached and not-configured outcomes (no server request
+  was made).
+- **Impression/click diagnostics now carry the correlating opportunity id.**
+  `TrackingDiagnosticsEntry` gains a `serverRequestId` field carrying the served
+  creative's ad-opportunity id (ad response `request_id`). Impression/click
+  tracking URLs are keyed under this id server-side, so reading it off the
+  confirmed-impression entry correlates the exact request to its funnel row —
+  instead of inferring which `loadAd` operation produced the displayed creative
+  (transcript-driven preloads/reloads create several). Retained in memory only.
+- **Diagnostics now record the requested ad display position.**
+  `DiagnosticsEntry` gains a `displayPosition: AdDisplayPosition?` field carrying
+  the position the operation requested (`nil` when the caller passed none). It
+  disambiguates otherwise-identical `loaded(elo)` rows — e.g. a `.banner`
+  keyboard-banner load from a background no-position context preload for the
+  same message count — so integrators and test harnesses can select the
+  operation for a specific surface deterministically. Retained in memory only;
+  never exported.
+
+- **Breaking: `AdResult.loaded` now carries the winning bid's auction data** —
+  `case loaded(EloAd, eCpm: Double, networkId: String)`, matching Android's
+  `AdResult.Loaded(ad, eCpm, networkId)`. `eCpm` is the winning price
+  (USD-equivalent CPM, always `>= 0`); `networkId` identifies the winning
+  adapter (`"elo"` for Elo demand). Update pattern matches from
+  `case .loaded(let ad)` to `case .loaded(let ad, _, _)` (or bind the new
+  values). Cache-served preloads return the auction data of the original win.
+- **Privacy: the `X-Elo-State` session header no longer leaks to third
+  parties.** Tracking pings only attach it when the URL matches the configured
+  API origin (scheme + host + port), and a redirect off the API origin strips
+  it mid-flight — matching the Android SDK's origin gating.
+- **Privacy: removed the `Device-Name` and `System-Version` HTTP headers** from
+  SDK requests. Android never sent them; device/OS context already travels in
+  the `User-Agent` and the OpenRTB `device` object.
+- Preloaded ads are keyed on display position and the consent snapshot in
+  addition to messages and context, so a preload is never served for a
+  different slot position or after a consent change (Android parity).
+- Ad request payloads omit the `context` key entirely when no context objects
+  are provided, instead of sending an empty array (Android wire parity).
+- New `MessageRole.summary` for hosts that condense long transcripts into one
+  summary message plus the latest exchange (Android parity).
+- New `NoFillReason.other(String)` case for reasons that don't fit the
+  existing categories (Android parity).
+- `AdNetworkAdapter` gains an optional `shutdown()` teardown hook (default
+  no-op) invoked from `Elo.shutdown()` and on re-configure, mirroring
+  Android's adapter lifecycle.
+- **Fixed impressions never firing for SDK-rendered creatives on recent OS
+  releases.** The viewability plumbing moved from `GeometryReader` +
+  preference keys (which stopped delivering non-zero frames) to
+  `onGeometryChange`, restoring the ≥50%-visible-for-1-second impression
+  contract.
+- The mediation auction deadline is now the tighter of the per-request
+  timeout and the configured auction timeout, so adapters and the mediator
+  agree on the deadline (Android parity).
+- Impression and click delegate callbacks are no longer delivered after
+  `Elo.shutdown()` or a re-configure — tracking that completes late can't
+  notify a delegate about a previous session's ads.
+- Elo-direct click POST delivery is temporarily disabled. Tapping still opens
+  the creative destination and delivers publisher callbacks, while diagnostics
+  report server receipt as unobservable. Third-party `click_trackers` remain
+  server-owned.
+- Elo render and impression URL trackers now validate HTTP completion and
+  require 2xx responses instead of silently swallowing delivery failures.
+  Their delegate callbacks wait for confirmed Elo delivery; third-party adapter
+  completion remains explicitly unobservable.
+- `Elo.Debug.snapshot().trackingEntries` adds a bounded, in-memory history of
+  tracking attempts and privacy-safe outcomes without retaining tracker URLs,
+  request headers, or chat content.
+- `Elo.Debug.snapshot().entries` now includes preload outcomes and their
+  redacted request payloads, so privacy and request diagnostics remain visible
+  when a later `loadAd` consumes the in-memory cache.
+- Diagnostics load entries now expose a locally generated `operationId` so
+  hosts can distinguish concurrent or same-second requests in memory. The ID
+  is omitted from plain-text diagnostics exports.
+
+
+
 ## 0.1.7 — 2026-07-11
 
 - **`Elo.initialize` is deprecated** and will be removed in 1.0.

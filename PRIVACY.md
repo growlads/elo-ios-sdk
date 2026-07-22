@@ -119,7 +119,7 @@ manual declaration. At minimum, account for:
 | Device ID | If you request ATT (IDFA), or via IFV fallback | Third-Party Advertising |
 | Coarse Location | `shareGeoLocation` on + app holds location permission (default precision) | Third-Party Advertising |
 | Precise Location | Same, if you raise `geoLocationPrecision` to 3+ | Third-Party Advertising |
-| Product Interaction | Impression/click tracking on ads | Third-Party Advertising, Analytics |
+| Product Interaction | Impression tracking, plus click tracking when a mediated network delivers it | Third-Party Advertising, Analytics |
 
 Whether data counts as "linked to the user" or "used for tracking" depends
 on your overall setup (ATT status, your other SDKs, your Elo account's data
