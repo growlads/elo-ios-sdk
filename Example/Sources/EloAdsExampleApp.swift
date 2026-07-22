@@ -49,56 +49,82 @@ struct EloAdsExampleApp: App {
 }
 
 struct ContentView: View {
-    @State private var adResult: AdResult?
-    @State private var isLoading = false
-
-    private let messages: [ChatMessage] = [
+    // Two independent conversations, each rendering a contextual ad in one of
+    // the two EloAdLayout formats so the demo shows both side by side. Each
+    // `EloAdView(messages:layout:)` runs its own auction (Elo-direct + AdMob in
+    // parallel) and renders the higher-eCPM creative in the requested layout.
+    private let shoeConversation: [ChatMessage] = [
         ChatMessage(role: .user, content: "What's the best running shoe for marathon training?"),
         ChatMessage(role: .assistant, content: "For marathon training, you'll want shoes with good cushioning and durability. Brands like Hoka, Nike, and Brooks are popular picks."),
     ]
 
+    private let coffeeConversation: [ChatMessage] = [
+        ChatMessage(role: .user, content: "How do I make espresso at home without a fancy machine?"),
+        ChatMessage(role: .assistant, content: "A stovetop Moka pot gets you close for very little money. Use fine ground coffee, medium heat, and pull it off the stove as soon as it starts sputtering."),
+    ]
+
     var body: some View {
-        VStack(spacing: 24) {
-            Text("Elo Ads Demo")
-                .font(.largeTitle.bold())
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    Text("Two chat threads, one ad each — the top slot uses the compact horizontal card, the bottom slot uses the inline banner.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
 
-            Text("Tap below to request a contextual ad. The auction runs Elo-direct and AdMob in parallel; the higher-eCPM creative renders.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                    // Format 1: compact horizontal card.
+                    AdFormatSection(
+                        format: "compactHorizontal",
+                        messages: shoeConversation,
+                        layout: .compactHorizontal
+                    )
 
-            Button(action: loadAd) {
-                if isLoading {
-                    ProgressView()
-                } else {
-                    Text("Load ad")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
+                    Divider()
+
+                    // Format 2: inline banner strip.
+                    AdFormatSection(
+                        format: "inlineBanner",
+                        messages: coffeeConversation,
+                        layout: .inlineBanner
+                    )
                 }
+                .padding()
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(isLoading)
+            .navigationTitle("Elo Ads Demo")
+        }
+    }
+}
 
-            // EloAdView renders the loaded ad, handles impression and click
-            // lifecycle events, and hides itself on `.noFill` / `.error`.
-            // Elo-direct clicks still open the destination while client-side
-            // click POST delivery is temporarily disabled.
-            EloAdView(result: adResult)
-                .padding(.horizontal)
+/// One chat thread followed by an ad in a specific layout, plus a small
+/// outcome label so the demo doubles as an integration smoke test.
+private struct AdFormatSection: View {
+    let format: String
+    let messages: [ChatMessage]
+    let layout: EloAdLayout
+
+    @State private var adResult: AdResult?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(format)
+                .font(.footnote.monospaced().bold())
+                .foregroundStyle(.secondary)
+
+            ForEach(messages, id: \.self) { message in
+                ChatBubble(message: message)
+            }
+
+            // EloAdView loads the ad from the conversation, renders it in the
+            // requested layout, handles impression and click lifecycle events,
+            // and hides itself on `.noFill` / `.error`. Elo-direct clicks still
+            // open the destination while client-side click POST delivery is
+            // temporarily disabled.
+            EloAdView(
+                messages: messages,
+                onResult: { adResult = $0 },
+                layout: layout
+            )
 
             if let adResult { outcomeRow(for: adResult) }
-
-            Spacer()
-        }
-        .padding()
-    }
-
-    private func loadAd() {
-        isLoading = true
-        Task {
-            adResult = await Elo.loadAd(messages: messages)
-            isLoading = false
         }
     }
 
@@ -115,5 +141,24 @@ struct ContentView: View {
         Text(label)
             .font(.footnote.monospaced())
             .foregroundStyle(color)
+    }
+}
+
+/// A minimal chat bubble so the ad has believable surrounding context.
+private struct ChatBubble: View {
+    let message: ChatMessage
+
+    private var isUser: Bool { message.role == .user }
+
+    var body: some View {
+        HStack {
+            if isUser { Spacer(minLength: 40) }
+            Text(message.content)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(isUser ? Color.accentColor.opacity(0.15) : Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            if !isUser { Spacer(minLength: 40) }
+        }
     }
 }
