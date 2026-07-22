@@ -18,13 +18,13 @@ In Xcode: **File → Add Package Dependencies**, then enter:
 https://github.com/growlads/elo-ios-sdk
 ```
 
-Pick **Up to Next Major Version** from `0.1.7`, and add the `EloAds` library to your target.
+Pick **Up to Next Major Version** from `0.1.8`, and add the `EloAds` library to your target.
 
 Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.1.7"),
+    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.1.8"),
 ]
 ```
 
@@ -139,7 +139,7 @@ Add the `EloAdsMediationAdMob` product to your target and switch from `Elo.initi
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.1.7"),
+    .package(url: "https://github.com/growlads/elo-ios-sdk", from: "0.1.8"),
 ],
 targets: [
     .target(

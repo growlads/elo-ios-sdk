@@ -80,9 +80,10 @@ struct ContentView: View {
             .buttonStyle(.borderedProminent)
             .disabled(isLoading)
 
-            // EloAdView renders the loaded ad and hides itself on
-            // `.noFill` / `.error`, so handing it the result directly is
-            // the path of least resistance.
+            // EloAdView renders the loaded ad, handles impression and click
+            // lifecycle events, and hides itself on `.noFill` / `.error`.
+            // Elo-direct clicks still open the destination while client-side
+            // click POST delivery is temporarily disabled.
             EloAdView(result: adResult)
                 .padding(.horizontal)
 
