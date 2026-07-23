@@ -45,8 +45,8 @@ link the `EloAdsMediationAdMob` product as shown below.
 ```swift
 import EloAds
 
-// 1. Initialize once at app launch.
-Elo.initialize(
+// 1. Configure once at app launch.
+Elo.configure(
     publisherId: "your-publisher-id",
     adUnitId: "your-ad-unit-id"
 )
@@ -135,7 +135,7 @@ Elo runs a parallel first-price auction across its own demand and any mediation 
 
 ### Wiring it up
 
-Add the `EloAdsMediationAdMob` product to your target and switch from `Elo.initialize` to `Elo.configure(with:)` so you can pass an `adapters` list:
+Add the `EloAdsMediationAdMob` product to your target and switch from `Elo.configure(publisherId:adUnitId:)` to `Elo.configure(with:)` so you can pass an `adapters` list:
 
 ```swift
 dependencies: [
