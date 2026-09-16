@@ -8,7 +8,7 @@ host app — are responsible for. Read it before shipping.
 ## TL;DR checklist
 
 - [ ] Disclose in your privacy policy that chat content is shared with Elo
-      (and any mediation partners) for contextual advertising.
+      for contextual advertising.
 - [ ] Declare the data types below in your App Store Connect privacy
       nutrition label — the SDK's bundled privacy manifest does **not** do
       this for you.
@@ -35,10 +35,12 @@ makes no ad requests on its own.
 
 ### Chat content — the big one
 
-The `messages` (role + full text) and `contextObjects` you pass are sent
-verbatim to Elo's ad server for contextual targeting, and are also visible
-to every mediation adapter registered in the auction (via `AdBidRequest`).
-The SDK truncates long histories but does not redact anything.
+The `messages` (role and full text) and `contextObjects` you pass are sent
+verbatim to Elo's ad server for contextual targeting. A message's optional
+`id` is sent trimmed of surrounding whitespace, and its optional `createdAt`
+is sent as a UTC time rounded to the millisecond; either is left out when it
+fails the checks described in the README. The SDK truncates long histories
+but does not redact anything.
 
 **You control what goes in.** Treat the `messages` parameter as data leaving
 your app to a third party:
@@ -162,7 +164,7 @@ manual declaration. At minimum, account for:
 | Device ID | If you request ATT (IDFA), or via IFV fallback | Third-Party Advertising |
 | Coarse Location | `shareGeoLocation` on + app holds location permission (default precision) | Third-Party Advertising |
 | Precise Location | Same, if you raise `geoLocationPrecision` to 3+ | Third-Party Advertising |
-| Product Interaction | Impression tracking, tap position inside Elo-served ad views (relative to the ad view, never the screen), plus click tracking when a mediated network delivers it | Third-Party Advertising, Analytics |
+| Product Interaction | Impression tracking, the ad view's size and position on screen when it first became viewable, tap position inside Elo-served ad views (relative to the ad view, never the screen), plus click tracking when a mediated network delivers it, and how long your in-app browser stayed open on an ad click if you call `Elo.trackBrowserOpened` / `Elo.trackBrowserClosed` | Third-Party Advertising, Analytics |
 | Email Address | Only if you pass `email` to `Elo.setUserData` — hashing on receipt does not exempt it | Third-Party Advertising |
 | Phone Number | Only if you pass `phone` to `Elo.setUserData` — hashing on receipt does not exempt it | Third-Party Advertising |
 | Other Data (age, gender) | Only if you pass them to `Elo.setUserData` | Third-Party Advertising |
@@ -177,21 +179,6 @@ If you want IDFA-based demand, you must add `NSUserTrackingUsageDescription`
 to your `Info.plist` and request ATT yourself, and your app's "used for
 tracking" declarations must match. If you never prompt, the SDK operates
 contextually — this is the lower-risk default.
-
-### SKAdNetwork
-
-If you use the AdMob adapter, merge its `AdMobSKAdNetworkItems.plist` into
-your `Info.plist` — see
-[Sources/EloAdsMediationAdMob/README.md](./Sources/EloAdsMediationAdMob/README.md).
-
-## Mediation adapters multiply your surface
-
-Every adapter you register brings its own SDK with its own collection
-behavior, and receives the auction's `AdBidRequest` (including messages).
-The AdMob adapter links Google Mobile Ads, which has independent data
-collection and its own [privacy disclosure requirements](https://developers.google.com/admob/ios/data-disclosure) —
-you must account for it in your nutrition label separately. Vet any
-third-party adapter's data handling before registering it.
 
 ## Children
 

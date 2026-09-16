@@ -1,6 +1,6 @@
 # Elo Example
 
-A SwiftUI iOS app that demonstrates a minimal Elo integration with AdMob mediation: SDK configuration, a contextual ad request built from a chat snippet, and rendering with `EloAdView`.
+A SwiftUI iOS app that demonstrates a minimal Elo integration: SDK configuration, a contextual ad request built from a chat snippet, and rendering with `EloAdView`.
 
 ## Run
 
@@ -10,11 +10,11 @@ open EloAdsExample.xcodeproj
 
 Pick an iPhone simulator and press ▶. Tap **Load ad** to fire a request and render the result.
 
-> **Before it returns real fills:** edit `Sources/EloAdsExampleApp.swift` and replace `eloPublisherID` / `eloAdUnitID` with values from your Elo dashboard. The placeholder strings are deliberately invalid so untouched runs surface as a no-fill / error outcome rather than silently calling out to a stranger's account. The AdMob ad-unit is Google's public native test unit and works unchanged.
+> **Before it returns real fills:** edit `Sources/EloAdsExampleApp.swift` and replace `eloPublisherID` / `eloAdUnitID` with values from your Elo dashboard. The placeholder strings are deliberately invalid so untouched runs surface as a no-fill / error outcome rather than silently calling out to a stranger's account.
 
 ## What it does
 
-- Calls `Elo.configure(with:)` at launch, registering the AdMob mediation adapter alongside Elo-direct demand. Adapter setup (app ID, `expectedEcpm`, consent) is documented in the [Mediation section of the root README](../README.md#mediation-optional).
+- Calls `Elo.configure(with:)` at launch with Elo as the only demand source. If you also run another ad network, hand the slot to it on no-fill; see [Falling back to another network](../README.md#falling-back-to-another-network) in the root README.
 - Sends a small two-message `[ChatMessage]` array as the ad context via `Elo.loadAd(messages:)`.
 - Hands the resulting `AdResult` to `EloAdView`, which hides itself on no-fill / error, renders the creative on success, and owns impression/click lifecycle behavior. Elo-direct taps still open the destination while client-side click POST delivery is temporarily disabled.
 - Surfaces the raw outcome below the ad slot so the demo stays informative even when there's no fill.

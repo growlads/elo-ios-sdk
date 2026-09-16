@@ -13,39 +13,12 @@ let package = Package(
     ],
     products: [
         .library(name: "EloAds", targets: ["EloAds"]),
-        .library(
-            name: "EloAdsMediationAdMob",
-            targets: ["EloAdsMediationAdMob", "EloAdsMediationAdMobDependencies"]
-        ),
-    ],
-    dependencies: [
-        .package(
-            url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
-            from: "13.3.0"
-        ),
     ],
     targets: [
         .binaryTarget(
             name: "EloAds",
-            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.5.0/EloAds.xcframework.zip",
-            checksum: "f8284c5cdb7159e1780f0f9dd212ef2c834f03cca5533f5446ced414b6e4adb8"
-        ),
-        .binaryTarget(
-            name: "EloAdsMediationAdMob",
-            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.5.0/EloAdsMediationAdMob.xcframework.zip",
-            checksum: "4f7235f8e5d6793ada79c33d532b9966579f3173d5653b5c0966821ea9479298"
-        ),
-        .target(
-            name: "EloAdsMediationAdMobDependencies",
-            dependencies: [
-                "EloAds",
-                "EloAdsMediationAdMob",
-                .product(
-                    name: "GoogleMobileAds",
-                    package: "swift-package-manager-google-mobile-ads"
-                ),
-            ],
-            path: "Sources/EloAdsMediationAdMobDependencies"
+            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.6.0/EloAds.xcframework.zip",
+            checksum: "cb71e90b7af6fdc0f7677b4aad364e4389fff369ec967e474d2318eed7748dfb"
         ),
     ]
 )
