@@ -1,42 +1,28 @@
 import SwiftUI
 import EloAds
-import EloAdsMediationAdMob
 
 // Replace these with your own publisher / ad-unit IDs from the Elo
 // dashboard before shipping. The example will run with the placeholders
-// in place but Elo-direct requests won't return real fills until you
-// swap them — untouched runs surface as a no-fill / error outcome rather
-// than silently calling out to a stranger's account. The AdMob ad-unit
-// below is Google's documented public test unit and is safe to use
-// unchanged in the demo.
+// in place but requests won't return real fills until you swap them.
+// Untouched runs surface as a no-fill / error outcome rather than
+// silently calling out to a stranger's account.
 private enum DemoConfig {
     static let eloPublisherID = "your-publisher-id"
     static let eloAdUnitID    = "your-ad-unit-id"
-    static let admobTestNativeAdUnitID = "ca-app-pub-3940256099942544/3986624511"
 }
 
 @main
 struct EloAdsExampleApp: App {
     init() {
-        // `Elo.configure(with:)` is the SDK's single entry point; the
-        // `adapters` list below is what opts this demo into AdMob
-        // mediation. Leave it empty for an Elo-only integration.
+        // `Elo.configure(with:)` is the SDK's single entry point. Elo is
+        // the only demand source here; see `loadAd()` for where a backup
+        // network takes over on no-fill.
         Elo.configure(
             with: EloConfiguration(
                 elo: EloNetworkConfiguration(
                     publisherId: DemoConfig.eloPublisherID,
                     adUnitId: DemoConfig.eloAdUnitID
-                ),
-                adapters: [
-                    AdMobNetworkAdapter(
-                        adUnitId: DemoConfig.admobTestNativeAdUnitID,
-                        // GoogleMobileAds native ads don't expose a bid
-                        // price, so Elo's first-price auction compares
-                        // AdMob using this fixed eCPM. Set it to your
-                        // realized AdMob value in production.
-                        expectedEcpm: 1.0
-                    ),
-                ]
+                )
             )
         )
     }
@@ -52,17 +38,33 @@ struct ContentView: View {
     @State private var adResult: AdResult?
     @State private var isLoading = false
 
-    private let messages: [ChatMessage] = [
-        ChatMessage(role: .user, content: "What's the best running shoe for marathon training?"),
-        ChatMessage(role: .assistant, content: "For marathon training, you'll want shoes with good cushioning and durability. Brands like Hoka, Nike, and Brooks are popular picks."),
-    ]
+    // Each turn gets its `id` and `createdAt` once, when it is created, and
+    // keeps them on every request: Elo uses them to date the turn and to
+    // match it to Search API calls that send the id as `X-Elo-Message-Id`.
+    private static let messages: [ChatMessage] = {
+        let now = Date()
+        return [
+            ChatMessage(
+                role: .user,
+                content: "What's the best running shoe for marathon training?",
+                id: UUID().uuidString,
+                createdAt: now
+            ),
+            ChatMessage(
+                role: .assistant,
+                content: "For marathon training, you'll want shoes with good cushioning and durability. Brands like Hoka, Nike, and Brooks are popular picks.",
+                id: UUID().uuidString,
+                createdAt: now
+            ),
+        ]
+    }()
 
     var body: some View {
         VStack(spacing: 24) {
             Text("Elo Ads Demo")
                 .font(.largeTitle.bold())
 
-            Text("Tap below to request a contextual ad. The auction runs Elo-direct and AdMob in parallel; the higher-eCPM creative renders.")
+            Text("Tap below to request a contextual ad. On no-fill, this is where your app would hand the slot to a backup network.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -97,8 +99,13 @@ struct ContentView: View {
     private func loadAd() {
         isLoading = true
         Task {
-            adResult = await Elo.loadAd(messages: messages)
+            // No `maxHeight`: the slot below has unbounded height, so the
+            // server may choose the card. Pass the space your slot has.
+            adResult = await Elo.loadAd(messages: Self.messages)
             isLoading = false
+            // Publisher-side fallback goes here: on `.noFill` / `.error`,
+            // hand the same slot to your backup ad network. This demo only
+            // reports the outcome below the slot.
         }
     }
 

@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		1FA7086FA58FE4081D037C0E /* EloAds in Frameworks */ = {isa = PBXBuildFile; productRef = 8CC7A26CA8B5B5A6088577E8 /* EloAds */; };
-		3BDDF68CB06B4620D07DD4F3 /* EloAdsMediationAdMob in Frameworks */ = {isa = PBXBuildFile; productRef = CC6D867E3BA688D0EB69F4D5 /* EloAdsMediationAdMob */; };
 		86ADB52CCB62BCB36B737D98 /* EloAdsExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3975CADB943F470AF7BBAA8D /* EloAdsExampleApp.swift */; };
 /* End PBXBuildFile section */
 
@@ -23,7 +22,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				1FA7086FA58FE4081D037C0E /* EloAds in Frameworks */,
-				3BDDF68CB06B4620D07DD4F3 /* EloAdsMediationAdMob in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,7 +69,6 @@
 			name = EloAdsExample;
 			packageProductDependencies = (
 				8CC7A26CA8B5B5A6088577E8 /* EloAds */,
-				CC6D867E3BA688D0EB69F4D5 /* EloAdsMediationAdMob */,
 			);
 			productName = EloAdsExample;
 			productReference = 88037BE64426881605E670F3 /* EloAdsExample.app */;
@@ -306,7 +303,7 @@
 			repositoryURL = "https://github.com/growlads/elo-ios-sdk";
 			requirement = {
 				kind = exactVersion;
-				version = 0.5.0;
+				version = 0.6.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -316,11 +313,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9FA4B7BFE744DA7A76EE3AE9 /* XCRemoteSwiftPackageReference "elo-ios-sdk" */;
 			productName = EloAds;
-		};
-		CC6D867E3BA688D0EB69F4D5 /* EloAdsMediationAdMob */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9FA4B7BFE744DA7A76EE3AE9 /* XCRemoteSwiftPackageReference "elo-ios-sdk" */;
-			productName = EloAdsMediationAdMob;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

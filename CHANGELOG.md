@@ -2,6 +2,159 @@
 
 ## Unreleased
 
+## 0.6.0 — 2026-09-16
+
+- **New: each message's `id` and `createdAt` are sent to Elo.** The ad
+  request now carries `ChatMessage.id` as the message's `message_id` and
+  `ChatMessage.createdAt` as its `timestamp`, so Elo knows when each turn
+  happened and can connect a turn to a Search API call that sends the same id
+  as `X-Elo-Message-Id`. Both stay optional. Set them once, when the turn is
+  created, and reuse them on every request; a `.summary` message should carry
+  the id and time of the turn it summarizes. An id longer than 256 Unicode
+  code points or containing non-printable characters, and a time before 2020
+  or more than a day ahead, are left out with a warning. Neither affects the
+  preload cache.
+
+- **New: report your own in-app browser.** If you open ad clicks in your own
+  browser, call `Elo.trackBrowserOpened(_:)` when it opens and
+  `Elo.trackBrowserClosed(_:)` when it closes. The SDK reports how long the
+  user stayed on the advertiser's page. Both events reach your debug observer
+  as `EloTrackingEvent.browserOpen` and `.browserClose`.
+
+- **New: the SDK reports where the ad was on screen when it became viewable.**
+  Once an Elo-served ad has been at least 50% visible for one second,
+  `EloAdView` posts one analytics event with the ad view's size and position
+  in the window, the window size, the visible fraction, and the time since
+  render, so Elo can verify that ads render in the SDK's own view. Nothing
+  about the surrounding app is sent. It reaches your debug observer as
+  `EloTrackingEvent.viewable`.
+
+- **New: theme the ad's typeface, color scheme, and chrome.** `EloAdStyle`
+  gains `font` (`EloAdFont.system(design:)` or `.custom(_:)`, applied to the
+  headline, description, CTA label, and disclosure badge at the SDK's own
+  sizes), `colorScheme` (forces light or dark colors on the ad only), and
+  `chrome` (`EloAdChrome.bare` removes the background, border, and rounded
+  clip; the card also drops its inner padding except a 4pt top and trailing
+  inset for the disclosure badge). `EloAdLoadingView` follows all
+  three.
+
+- **Fix: no empty gap before the headline on iOS 26 when an ad has no image.**
+  The card and the strip left 12pt and 10pt of space where the image would
+  be; the text now starts at the edge padding, as on earlier iOS versions.
+
+- **Change: the CTA label picks readable copy on a custom fill.** When you set
+  `callToActionBackground` and leave `callToActionForeground` `nil`, the label
+  is black or white, whichever contrasts more with your color. It was always
+  white.
+
+- **Breaking: the manual tracking calls are removed.** `Elo.trackRender`,
+  `Elo.trackImpression`, `Elo.trackClick`, and the matching `EloChatSession`
+  methods are no longer public. `EloAdView` sends render, impression, and click
+  tracking itself; render ads with `EloAdView` (or `.eloKeyboardBannerAd`).
+  `EloAdEvent.didTrackImpression` and `EloAdEvent.didReceiveClick` are removed
+  with them; use `EloAdDelegate` for impression and click callbacks.
+
+- **Breaking: `AdTracker` is no longer public.** `EloAd.init` drops its
+  `tracker:` parameter and builds a display-only ad that sends no events;
+  remove the argument from previews and tests.
+
+- **New: describe the slot, and the server chooses the format.** Pass
+  `maxHeight` (and optionally `maxWidth`), in points, to `Elo.loadAd`,
+  `Elo.preloadAd`, `EloChatSession.loadAd`, and
+  `EloAdView(messages:contextObjects:maxHeight:maxWidth:...)`. The server
+  returns the format that fits (the chat-row card needs 80 points, the strip
+  fits below that), and `EloAdView` renders whichever format the ad names,
+  including `EloAdView(ad:)` and `EloAdView(result:)`. When no format fits,
+  the result is a no-fill. Leaving `maxHeight` `nil` keeps today's card. The
+  loading placeholder follows `maxHeight` the same way, and `EloAdLoadingView`
+  gains a `maxHeight` parameter. `.eloKeyboardBannerAd` requests the strip's
+  height, so it keeps receiving the strip.
+
+- **Change: a preloaded ad is served only to a load with the same `maxHeight`
+  and `maxWidth`.** Pass the same values to `Elo.preloadAd` and the load that
+  consumes it.
+
+- **Breaking: `EloAdLayout`, the `layout:` parameters, and `.eloAdLayout(...)`
+  are removed.** The host no longer chooses the format. Pass `maxHeight` (and
+  `maxWidth`) for the space the slot has, and the server chooses the format.
+  `EloAdView(ad:)` and `EloAdView(result:)` render the format the ad carries.
+  `EloAdRenderConfiguration.layout` and `EloAdLoadingView(layout:)` are removed
+  with them; use `EloAdRenderConfiguration(style:sponsoredLabel:)` and
+  `EloAdLoadingView(maxHeight:)`.
+
+- **Breaking: `EloDebugAdOperation.displayPosition` is replaced.** The
+  operation now reports `format` (`strip` or `card`), the `maxHeight` and
+  `maxWidth` the request sent, and the ad's `ctaEnabled`, `ctaVariant`, and
+  `tapInset` presentation values. The SDK no longer sends `display_position`
+  on the ad request; the server derives it from the chosen format.
+
+- **Breaking: AdMob mediation and the client-side auction are removed.**
+  Elo is now the SDK's only demand source; if you run another ad network,
+  request Elo first and hand the slot to your backup network on `noFill` or
+  `error` yourself. The README's "Falling back to another network" section
+  shows the pattern, including the two-request variant for chat UIs.
+  Removed: the `EloAdsMediationAdMob` product and `AdMobNetworkAdapter`;
+  the `AdNetworkAdapter`, `AdMediator`, `AdBid`, `AdBidRequest`,
+  `AdConsent`, and `AdAdapterError` types; `EloConfiguration.adapters`;
+  the `ValidationIssue.duplicateNetworkId`, `.missingInfoPlistKey`, and
+  `.missingSKAdNetworkId` cases; the `auctionStarted`,
+  `adapterStartStarted`, `adapterStartFinished`, `adapterStartFailed`,
+  `adapterOutcome`, and `auctionFinished` debug events with their
+  `EloAdapterAuctionOutcome` / `EloAuctionOutcome` payloads;
+  `EloDebugConfiguration.adapterIds`; and `EloErrorCategory.adapter`.
+  Changed: `AdResult.loaded` is now `.loaded(EloAd, eCpm:)` with no
+  `networkId`; `EloAdLoadOutcome.loaded` is `.loaded(eCpm:)`;
+  `NoFillReason.auctionTimeout` is renamed `.timeout` and
+  `EloDebugConfiguration.auctionTimeout` is renamed `requestTimeout`.
+  Public releases ship a single `EloAds.xcframework` with no third-party
+  dependencies.
+
+- **Breaking: the on-device diagnostics and mediation-debug snapshots are gone,
+  replaced by a debug event observer.** `Elo.Debug.snapshot()`,
+  `Elo.mediationDebugSnapshot()`, and `Elo.setRequestPayloadCaptureEnabled(_:)`
+  are removed, along with the `DiagnosticsSnapshot`, `DiagnosticsEntry`,
+  `TrackingDiagnosticsEntry`, `IntegrationStatus`, and
+  `EloMediationDebugSnapshot` types. `Elo.setDebugObserver(_:capturePayloads:)`
+  replaces all of them: the SDK reports each `EloDebugEvent` as it happens —
+  load and preload outcomes, and tracking attempts and their outcomes — and
+  keeps no history of its own. An app that wants a recent-loads list or
+  tracking totals records the events itself; the example app's Diagnostics tab
+  shows how. With no observer attached the SDK stores no load history, no
+  tracking history, and no request payloads. Pass `capturePayloads: true` to
+  also receive the redacted request payload and decoded ad response that
+  `setRequestPayloadCaptureEnabled(true)` used to enable.
+
+- **Breaking: `SKAdNetworkConversionHelper` is removed.** It wrapped Apple's
+  `SKAdNetwork` conversion APIs but was not used by any part of the SDK. Call
+  `SKAdNetwork` directly.
+
+- **Breaking: the deprecated `Elo.initialize(...)` is removed.** It was sugar
+  over `configure` and has warned since 0.1.9. Use
+  `Elo.configure(publisherId:adUnitId:shareGeoLocation:geoLocationPrecision:)`,
+  or build an `EloConfiguration` and call `Elo.configure(with:)` for
+  COPPA/TFUA, `logLevel` or `baseUrl`.
+
+- **New: some demand sources' tracking notices are now requested by the
+  device.** A few networks only count a render, impression or click when the
+  URL is fetched by the device that saw the ad rather than by Elo's servers.
+  Where a creative carries such notices, the SDK now requests them itself, at
+  the moment each one names, and at most once per showing. They are sent
+  bare — none of the SDK's headers or session data travels with them — and
+  their outcome does not affect Elo's own tracking or any callback your app
+  receives. Creatives without them, still the majority, are unchanged.
+
+- **New: the analytics body behind a tap.** `EloDebugEvent.trackingAttempted`
+  now carries a `payloadJSON`, the body its operation posted to `sdk/events`,
+  so an integration can show on device exactly what a tap reported. Only a tap
+  has a body: render and impression are URL pings whose signed tokens are never
+  retained, and click posts nothing. It stays `nil` unless the observer was
+  registered with `capturePayloads: true`, the same switch that governs the ad
+  request and response payloads.
+
+- **New: `Elo.sdkVersion`** — unchanged in behavior, but it now lives on `Elo`
+  itself rather than under the removed `Elo.Debug` namespace.
+
+
 ## 0.5.0 — 2026-09-04
 
 - **New: server-selected CTA attention treatments in the keyboard strip.**
