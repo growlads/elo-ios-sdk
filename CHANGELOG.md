@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.6.1 — 2026-09-17
+
+- **In-chat card layout.** The card is now set like a feed ad: a header row
+  with the brand mark beside the brand name and the disclosure under it, the
+  description as body copy at the card's full width (up to three lines, no
+  scrolling), and the call-to-action pill on a row of its own at the trailing
+  edge. The card is taller than before and its height depends on the copy,
+  so a bounded slot now needs a `maxHeight` of at least 192 points to get
+  it; shorter slots get the strip, as does the loading placeholder.
+  `EloAdStyle.descriptionOverflow` now applies to the strip only.
+- **New: `EloDebugAdOperation.tapSurface`.** The operation reports the ad's
+  `presentation.tap_surface` value (`cta` or `full`) next to the other
+  presentation values; `nil` when not sent or on a no-fill.
+
+
 ## 0.6.0 — 2026-09-16
 
 - **New: each message's `id` and `createdAt` are sent to Elo.** The ad
