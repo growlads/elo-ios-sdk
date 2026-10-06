@@ -2,6 +2,64 @@
 
 ## Unreleased
 
+## 0.7.0 — 2026-10-06
+
+- **An ad requested while your app is in the background no longer comes
+  back empty.** iOS suspends the app, so a request sent then (for example,
+  when a chat reply lands while the user reads an ad in Safari) timed out on
+  return, and the keyboard banner emptied its slot. `Elo.loadAd` now retries
+  such a request once when the app runs again. No public API changes.
+- **A tap next to an ad no longer opens it.** iOS gives a button the touches
+  that land up to about 20 points outside it, so a tap beside a chat card or
+  just outside the keyboard strip opened the ad and counted as a click. The
+  SDK now opens nothing for a touch that began outside the ad. No public API
+  changes.
+- **A double tap opens an ad once.** A second tap within one second of
+  opening an ad no longer opens its link again or presents your in-app
+  browser twice, and `eloAdDidReceiveClick` runs once. No public API changes.
+- **Breaking: ads no longer open through SwiftUI's `openURL`.** `EloAdView`
+  used to open a click URL through the `openURL` environment action, so an
+  `openURL` handler in your app decided where an ad opened, and one that
+  claimed the URL without opening it left the tap with nothing. In an app, the
+  SDK now ignores `openURL` for ads and opens them in the system browser unless
+  your delegate opens them. In an app extension, which has no `UIApplication`,
+  ads still open through `openURL`. If you show ads in your own in-app browser through an
+  `openURL` handler, you must move that code to the new
+  `EloAdDelegate.eloAdOpenClickURL(_:url:)`; until you do, your ads open in
+  Safari:
+
+  ```swift
+  func eloAdOpenClickURL(_ ad: EloAd, url: URL) -> Bool {
+      Elo.trackBrowserOpened(ad)
+      browser.open(url) { Elo.trackBrowserClosed(ad) }
+      return true
+  }
+  ```
+
+  Return `false`, the default, to let the SDK open the system browser. Do not
+  open the URL from `eloAdDidReceiveClick`, as the README used to show: the
+  SDK opens it too, so the ad opened twice.
+- **Demand-source notices now carry the browser user agent.** The tracking
+  notices the device requests for some demand sources now send the WebKit
+  user agent that the ad request sent as `device.ua`, instead of your app's
+  default networking agent, so the network sees the same device on its
+  tracking URL as in its bid request. Networks already receive this agent in
+  Elo's bid request, so no new data is shared. When the SDK could not read
+  the WebKit agent, a notice keeps your app's default agent, as before. No
+  public API changes.
+- **Child-directed requests no longer send location coordinates.** With
+  `coppa` or `tfua` set, an ad request now leaves out latitude and longitude
+  even when location sharing is on and your app holds location permission,
+  as the Android SDK already did. Country and UTC offset are still sent. No
+  public API changes.
+- **The first ad request after `configure` is faster.** `configure` now
+  sends one `HEAD` request to the ad server's health endpoint, so the first
+  ad request reuses an open connection instead of setting one up inside its
+  3 second deadline. The request carries no chat content, identifiers or
+  consent data, and is not sent when an `EloChatSession` starts disabled.
+  No public API changes.
+
+
 ## 0.6.1 — 2026-09-17
 
 - **In-chat card layout.** The card is now set like a feed ad: a header row

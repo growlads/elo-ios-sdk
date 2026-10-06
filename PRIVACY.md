@@ -33,6 +33,13 @@ Everything below is sent only when your app calls `Elo.loadAd` /
 `Elo.preloadAd` (or uses a view/modifier that calls them for you). The SDK
 makes no ad requests on its own.
 
+`configure` (unless the session starts disabled) sends one `HEAD` request
+to the ad server's health endpoint, so the first ad request does not wait
+for connection setup.
+It carries no chat content, identifiers or consent data; the server sees the
+device's IP address and the SDK `User-Agent` header (SDK version, device
+model, OS version, app identifier and version).
+
 ### Chat content — the big one
 
 The `messages` (role and full text) and `contextObjects` you pass are sent
@@ -124,6 +131,8 @@ the device location *only if your app already holds location authorization*
 and attaches it, rounded to `geoLocationPrecision` decimal places (default
 2, roughly 1 km). The SDK never requests location permission itself. If your
 app has no location permission, nothing is sent regardless of this setting.
+Coordinates are never sent for `coppa`/`tfua` configurations, even with
+sharing on and an authorized fix available.
 
 Opt out at init (`shareGeoLocation: false`) or at runtime
 (`Elo.setShareGeoLocation(false)`). If your location permission's usage
@@ -184,6 +193,6 @@ contextually — this is the lower-risk default.
 
 Set `coppa: true` (child-directed) or `tfua: true` (under-age-of-consent)
 in `EloConfiguration` where they apply — both disable device identifiers
-entirely. These flags do not by themselves make an integration COPPA
-compliant, and Apple's Kids category prohibits most third-party advertising.
+and location coordinates entirely. These flags do not by themselves make
+an integration COPPA compliant, and Apple's Kids category prohibits most third-party advertising.
 Do not integrate this SDK into a child-directed app without legal review.
