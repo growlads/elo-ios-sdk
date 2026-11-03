@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.8.1 — 2026-11-03
+
+- **`EloAd.format` is public.** It says which layout the server chose
+  (`EloAdFormat`: `.strip`, `.compact`, `.card` or `.full`). An app with two
+  placements, such as one above the composer and one in place of the closed
+  keyboard, reads it to show the ad in the right one; the preferred format Elo
+  sets for your app then switches placements without an app release. Handle
+  later formats in an `@unknown default` branch.
+- **The full card has a set height.** It is 272 points tall, the full
+  format's height, instead of following the `maxHeight` the ad was requested
+  with. Pass `fullCardHeight:` to `EloAdView` to make it taller, for example
+  the keyboard's height to fill its room; the image takes the extra height.
+
+
 ## 0.8.0 — 2026-11-03
 
 - **Breaking: ad slots show nothing until an ad loads.** The server picks the
