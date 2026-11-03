@@ -17,8 +17,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "EloAds",
-            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.7.0/EloAds.xcframework.zip",
-            checksum: "763093cba1db59e61915fb14db61b19c980e0c961f62508bdfba2743e5ae84fc"
+            url: "https://github.com/growlads/elo-ios-sdk/releases/download/0.8.0/EloAds.xcframework.zip",
+            checksum: "b82ffde85f555446e687cc45e6b89c9673c8112526784aae6c12490412a98ed0"
         ),
     ]
 )

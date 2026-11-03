@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+## 0.8.0 — 2026-11-03
+
+- **Breaking: ad slots show nothing until an ad loads.** The server picks the
+  format, so a placeholder could not know which shape to take: it showed one
+  shape, then resized to the ad, or showed and collapsed on a no-fill. The
+  request-owning `EloAdView` now draws the ad once it loads, and nothing
+  before. `EloAdLoadingView` and the `showLoadingPlaceholder:` and
+  `loadingAccessibilityLabel:` parameters are removed; delete those arguments
+  from your calls.
+- **Two new ad layouts, chosen by the server.** When the slot height you
+  request with fits them, the server can now answer with a compact card for
+  above the open keyboard or a full card with a large image for the space a
+  closed keyboard leaves. The full card shows the whole image on white, so a
+  product photo is not cropped. Both show the advertiser's brand name when the
+  ad has one. The compact card's one-line description scrolls when it does
+  not fit, like the strip's. Both cards' buttons use the strip's colors:
+  `callToActionBackground`, else your app's accent color. The full card
+  draws a close button that hides the ad and calls the new `onDismiss`
+  closure on `EloAdView`.
+- **Breaking: `.eloKeyboardBannerAd(...)` is removed.** Put an `EloAdView`
+  with your slot's `maxHeight` directly above your composer instead, for
+  example `EloAdView(messages: messages, maxHeight: 72)`; the server picks
+  the format that fits. See "Ads above the keyboard" in the README.
+- **Ads show the brand's logo and name.** Every format draws the ad's
+  image; an ad with only a brand logo draws the logo instead, in a circle
+  it fills. The compact and full cards also put the logo on the image in a
+  small round badge. The compact card leads its
+  title with the brand name; the full card sets it beside the logo on the
+  image. On both cards' image the disclosure and the brand name are white
+  text on a dark chip, so they read on a light product photo too, unless
+  you set a badge color with `EloAdDisclosure.color` or
+  `EloAdStyle.badgeColor`. No public API changes.
+
+
 ## 0.7.0 — 2026-10-06
 
 - **An ad requested while your app is in the background no longer comes
